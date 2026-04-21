@@ -131,6 +131,57 @@
     .sbd-label{font-size:11.5px;color:var(--text-2)} .sbd-val{font-size:11.5px;font-weight:600;color:var(--text-1)}
     .sbd-loading{font-size:11px;color:var(--text-2);font-style:italic}
 
+    /* DARK MODE — stat card text lighter */
+    [data-theme="dark"] .stat-card-label { color: #C5CEDF; }
+    [data-theme="dark"] .stat-hint       { color: #B8C3D8; }
+    [data-theme="dark"] .sbd-label       { color: #B8C3D8; }
+    [data-theme="dark"] .sbd-val         { color: #D4DCF0; }
+    [data-theme="dark"] .sbd-loading     { color: #B8C3D8; }
+
+    /* TABLE */
+    .filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+    .filter-search{flex:1;min-width:180px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:13px;color:var(--text-1);outline:none;transition:border-color var(--t)}
+    .filter-search:focus{border-color:var(--accent)}
+    .filter-search::placeholder{color:var(--text-3)}
+    .filter-select{padding:8px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:13px;color:var(--text-1);outline:none;cursor:pointer;transition:border-color var(--t)}
+    .filter-select:focus{border-color:var(--accent)}
+
+    .table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:background var(--t),border-color var(--t)}
+    .table-scroll{overflow-x:auto}
+    table.data-table{width:100%;border-collapse:collapse;font-size:13px}
+    table.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);border-bottom:1px solid var(--border);background:var(--bg-input);white-space:nowrap}
+    table.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text-1);vertical-align:middle}
+    table.data-table tr:last-child td{border-bottom:none}
+    table.data-table tr:hover td{background:var(--bg-input)}
+    .td-url{max-width:260px}
+    .td-url a{color:var(--accent);font-weight:500;text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .td-url a:hover{text-decoration:underline}
+    .td-name{color:var(--text-2);font-size:11.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+    .type-pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:var(--bg-input);color:var(--text-2);border:1px solid var(--border)}
+    .status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+    .status-ok    {background:rgba(16,185,129,0.12);color:#059669;border:1px solid rgba(16,185,129,0.25)}
+    .status-redir {background:rgba(245,158,11,0.12);color:#D97706;border:1px solid rgba(245,158,11,0.25)}
+    .status-err   {background:rgba(239,68,68,0.12);color:#DC2626;border:1px solid rgba(239,68,68,0.25)}
+    .status-none  {background:var(--bg-input);color:var(--text-3);border:1px solid var(--border)}
+    .td-num{text-align:center;font-size:12px;color:var(--text-2);font-weight:600}
+    .td-date{font-size:11.5px;color:var(--text-3);white-space:nowrap}
+
+    .table-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border)}
+    .table-count{font-size:12px;color:var(--text-3)}
+    .pagination{display:flex;align-items:center;gap:4px}
+    .pg-btn{padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-2);font-size:12.5px;cursor:pointer;font-family:var(--font);transition:all var(--t)}
+    .pg-btn:hover{background:var(--bg);color:var(--text-1)}
+    .pg-btn.active{background:var(--accent);color:#FFF;border-color:var(--accent)}
+    .pg-btn:disabled{opacity:0.35;cursor:not-allowed}
+
+    .table-state{padding:40px 20px;text-align:center}
+    .table-state-icon{font-size:32px;margin-bottom:12px}
+    .table-state-title{font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:6px}
+    .table-state-desc{font-size:13px;color:var(--text-3)}
+    .table-spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.75s linear infinite;margin:0 auto 12px}
+
+    .sec-head-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+
     /* SHARED COMPONENTS */
     .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .sec-title{font-size:14px;font-weight:600;color:var(--text-1)}
@@ -423,43 +474,53 @@
         <div class="stats-row">
           <div class="stat-card">
             <div class="stat-card-label"><span class="stat-dot" style="background:#3B7BFF"></span>Wszystkich miejsc</div>
-            <div class="stat-val">—</div><div class="stat-hint">w bazie danych</div>
-            <div class="stat-breakdown"><div class="sbd-loading">Połączenie w Etapie 2…</div></div>
+            <div class="stat-val" id="stat-all">—</div><div class="stat-hint">w bazie danych</div>
+            <div class="stat-breakdown" id="sbd-all"><div class="sbd-loading">Ładowanie…</div></div>
           </div>
           <div class="stat-card">
             <div class="stat-card-label"><span class="stat-dot" style="background:#10B981"></span>Aktywnych</div>
-            <div class="stat-val">—</div><div class="stat-hint">status OK (2xx)</div>
-            <div class="stat-breakdown"><div class="sbd-loading">Połączenie w Etapie 2…</div></div>
+            <div class="stat-val" id="stat-ok">—</div><div class="stat-hint">status OK (2xx)</div>
+            <div class="stat-breakdown" id="sbd-ok"><div class="sbd-loading">Ładowanie…</div></div>
           </div>
           <div class="stat-card">
             <div class="stat-card-label"><span class="stat-dot" style="background:#F59E0B"></span>Oczekuje</div>
-            <div class="stat-val">—</div><div class="stat-hint">do weryfikacji</div>
+            <div class="stat-val" id="stat-pend">—</div><div class="stat-hint">do weryfikacji</div>
           </div>
           <div class="stat-card">
             <div class="stat-card-label"><span class="stat-dot" style="background:#EF4444"></span>Nieaktywnych</div>
-            <div class="stat-val">—</div><div class="stat-hint">błędy 4xx / 5xx</div>
-            <div class="stat-breakdown"><div class="sbd-loading">Połączenie w Etapie 2…</div></div>
+            <div class="stat-val" id="stat-err">—</div><div class="stat-hint">błędy 4xx / 5xx</div>
+            <div class="stat-breakdown" id="sbd-err"><div class="sbd-loading">Ładowanie…</div></div>
           </div>
         </div>
-        <div class="sec-head">
-          <div class="sec-title">Miejscówki</div>
+
+        <!-- Filter bar -->
+        <div class="filter-bar">
+          <input type="text" class="filter-search" id="filter-search" placeholder="Szukaj po URL lub nazwie…" oninput="debounceSearch()">
+          <select class="filter-select" id="filter-type" onchange="loadPlaces(1)">
+            <option value="">Wszystkie typy</option>
+          </select>
+          <select class="filter-select" id="filter-status" onchange="loadPlaces(1)">
+            <option value="">Wszystkie statusy</option>
+            <option value="ok">Aktywne (OK)</option>
+            <option value="error">Błędy (4xx/5xx)</option>
+            <option value="unknown">Nie sprawdzono</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Wyczyść</button>
           <button class="btn btn-primary" onclick="showPage('dodaj',document.getElementById('nav-dodaj'))">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Dodaj nową
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Dodaj nową
           </button>
         </div>
-        <div class="empty-card">
-          <div class="empty-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3B7BFF" stroke-width="1.6"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
-          <div class="empty-title">Baza zostanie połączona w Etapie 2</div>
-          <div class="empty-desc">Tu pojawi się tabela ze wszystkimi miejscówkami, filtry według typów i wyszukiwarka. Dane z Google Sheets.</div>
-          <span class="soon-badge">Etap 2 — wkrótce</span>
-        </div>
-        <div class="features-grid">
-          <div class="feature-card"><div class="fc-icon" style="background:rgba(59,123,255,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B7BFF" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div><div class="fc-title">Logowanie Google</div><div class="fc-desc">Zabezpieczenie @sempai.pl, menu profilu, wylogowanie.</div><div class="fc-status done">✓ Gotowe — Etap 1</div></div>
-          <div class="feature-card"><div class="fc-icon" style="background:rgba(59,123,255,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B7BFF" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div><div class="fc-title">Folder Drive — picker</div><div class="fc-desc">Wybór folderu przez przeglądarkę Dysku Google, tworzenie nowych folderów.</div><div class="fc-status done">✓ Gotowe — Etap 1</div></div>
-          <div class="feature-card"><div class="fc-icon" style="background:rgba(16,185,129,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div><div class="fc-title">Połączenie z Google Sheets</div><div class="fc-desc">Baza danych na dysku admina, statystyki z rozbiciem per typ miejscówki.</div><div class="fc-status next">→ Następny — Etap 2</div></div>
-          <div class="feature-card"><div class="fc-icon" style="background:rgba(245,158,11,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div><div class="fc-title">Weryfikacja zgłoszeń</div><div class="fc-desc">Przepływ zgłoś → weryfikuj → zatwierdź z powiadomieniami e-mail.</div><div class="fc-status soon">Etap 5</div></div>
-          <div class="feature-card"><div class="fc-icon" style="background:rgba(239,68,68,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="fc-title">Monitoring domen</div><div class="fc-desc">Automatyczne sprawdzanie statusów + alerty po 7 dniach błędów.</div><div class="fc-status soon">Etap 7</div></div>
-          <div class="feature-card"><div class="fc-icon" style="background:rgba(139,92,246,0.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div><div class="fc-title">Panel admina + widok użytkownika</div><div class="fc-desc">Zarządzanie typami, użytkownikami i podgląd narzędzia jako zwykły użytkownik.</div><div class="fc-status done">✓ Gotowe — Etap 1</div></div>
+
+        <!-- Table -->
+        <div id="places-container">
+          <div class="table-wrap">
+            <div class="table-state">
+              <div class="table-spinner"></div>
+              <div class="table-state-title">Ładowanie bazy…</div>
+              <div class="table-state-desc">Łączenie z Google Sheets</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -518,10 +579,11 @@
   /* ── CONFIG ───────────────────────────────────── */
   const CLIENT_ID      = '287347548251-rp82vva0lt7i4rmjpnss3tca9dhuutf3.apps.googleusercontent.com';
   const ALLOWED_DOMAIN = 'sempai.pl';
-  const ADMIN_EMAILS   = ['kamil.zalewski@sempai.pl']; // hardcoded admins
+  const ADMIN_EMAILS   = ['kamil.zalewski@sempai.pl'];
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkiZM6kfRyG0UXVF-Rmkk9ZjK-Upt5fR0aiJQC_lehhKBY8VLhQ_9kO1CDMhHtzZSatg/exec';
   const THEME_KEY      = 'sld_theme';
   const SESSION_KEY    = 'sld_user';
-  const FOLDER_KEY     = 'sld_folder'; // {id,name,path}
+  const FOLDER_KEY     = 'sld_folder';
   const SETUP_KEY      = 'sld_setup';
 
   let currentUser = null;
@@ -806,9 +868,9 @@
 
   function showLoginError(msg){const el=document.getElementById('login-error');el.textContent=msg;el.classList.add('show')}
 
-  function enterApp(user){
-    const isAdmin=ADMIN_EMAILS.includes(user.email);
-    const initials=(user.name||user.email).split(/[ @]/).filter(Boolean).map(w=>w[0].toUpperCase()).slice(0,2).join('');
+  function enterApp(user) {
+    const isAdmin = ADMIN_EMAILS.includes(user.email);
+    const initials = (user.name||user.email).split(/[ @]/).filter(Boolean).map(w=>w[0].toUpperCase()).slice(0,2).join('');
     function setAv(el){if(!el)return;el.innerHTML=user.picture?`<img src="${user.picture}" alt="">`:initials}
     setAv(document.getElementById('sb-avatar'));
     const dn=user.name||user.email.split('@')[0];
@@ -816,24 +878,43 @@
     const ue=document.getElementById('udrop-email');if(ue)ue.textContent=user.email||'';
     const pn=document.getElementById('prof-name');if(pn)pn.textContent=user.name||'—';
     const pe=document.getElementById('prof-email');if(pe)pe.textContent=user.email||'—';
-    const roleLabel=isAdmin?'Administrator':'Specjalista SEO';
-    ['sb-role','prof-role'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=roleLabel});
 
-    if(isAdmin){
-      document.getElementById('admin-nav-label').style.display='block';
-      document.getElementById('nav-admin').style.display='flex';
-      document.getElementById('nav-users').style.display='flex';
-      document.getElementById('view-toggle-section').style.display='block';
-      viewMode='admin';
-    }
+    // Role: check from Sheets, then update UI
+    const storedRole = sessionStorage.getItem('sld_role') || (isAdmin ? 'admin' : 'user');
+    applyRole(storedRole);
 
     document.getElementById('login-page').style.display='none';
     document.getElementById('app').classList.add('show');
     refreshFolderDisplay();
     hideLoader();
 
-    if(!localStorage.getItem(SETUP_KEY)){
-      setTimeout(()=>openPicker('setup'),500);
+    // Load data from Sheets (async, non-blocking)
+    if (APPS_SCRIPT_URL) {
+      loadUserRole(user.email).then(role => {
+        sessionStorage.setItem('sld_role', role);
+        applyRole(role);
+        const pr = document.getElementById('prof-role'); if (pr) pr.textContent = role === 'admin' ? 'Administrator' : 'Specjalista SEO';
+      });
+      loadStats();
+      loadTypes().then(() => loadPlaces(1));
+    } else {
+      // No URL — show placeholder
+      renderStatsPlaceholder();
+      loadPlaces(1);
+    }
+
+    if (!localStorage.getItem(SETUP_KEY)) setTimeout(()=>openPicker('setup'), 500);
+  }
+
+  function applyRole(role) {
+    const isAdmin = role === 'admin';
+    const roleLabel = isAdmin ? 'Administrator' : 'Specjalista SEO';
+    ['sb-role','prof-role'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=roleLabel});
+    if (isAdmin) {
+      document.getElementById('admin-nav-label').style.display='block';
+      document.getElementById('nav-admin').style.display='flex';
+      document.getElementById('nav-users').style.display='flex';
+      document.getElementById('view-toggle-section').style.display='block';
     }
   }
 
@@ -844,6 +925,226 @@
     document.getElementById('app').classList.remove('show');
     document.getElementById('login-page').style.display='';
     document.getElementById('login-error').classList.remove('show');
+  }
+
+  /* ── SHEETS API ───────────────────────────────── */
+  let searchTimer = null;
+
+  async function callAPI(action, extra = {}) {
+    if (!currentUser?.access_token) return null;
+    if (!APPS_SCRIPT_URL) {
+      // No URL configured — show placeholder state
+      return null;
+    }
+    try {
+      const url = new URL(APPS_SCRIPT_URL);
+      url.searchParams.set('action', action);
+      url.searchParams.set('token', currentUser.access_token);
+      Object.entries(extra).forEach(([k, v]) => { if (v !== undefined && v !== '') url.searchParams.set(k, String(v)); });
+      const r = await fetch(url.toString());
+      return await r.json();
+    } catch (e) {
+      console.error('API error:', e);
+      return null;
+    }
+  }
+
+  /* ── STATS ────────────────────────────────────── */
+  async function loadStats() {
+    const data = await callAPI('stats');
+    if (!data) { renderStatsPlaceholder(); return; }
+    if (data.error) { renderStatsPlaceholder(); return; }
+    renderStats(data);
+  }
+
+  function renderStats(d) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('stat-all',  d.total    ?? '—');
+    set('stat-ok',   d.active   ?? '—');
+    set('stat-pend', d.pending  ?? '—');
+    set('stat-err',  d.inactive ?? '—');
+
+    // update badge
+    const badge = document.getElementById('badge-wer');
+    if (badge) { badge.textContent = d.pending || 0; badge.classList.toggle('hidden', !d.pending); }
+
+    renderBreakdown('sbd-all', d.byType);
+    renderBreakdown('sbd-ok',  d.activeByType);
+    renderBreakdown('sbd-err', d.inactiveByType);
+  }
+
+  function renderBreakdown(elId, byType) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!byType || !Object.keys(byType).length) { el.innerHTML = '<div class="sbd-loading">Brak danych</div>'; return; }
+    el.innerHTML = Object.entries(byType)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => `<div class="sbd-row"><span class="sbd-label">${escHtml(k)}</span><span class="sbd-val">${v}</span></div>`)
+      .join('') || '<div class="sbd-loading">Brak danych</div>';
+  }
+
+  function renderStatsPlaceholder() {
+    ['stat-all','stat-ok','stat-pend','stat-err'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    ['sbd-all','sbd-ok','sbd-err'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = APPS_SCRIPT_URL ? '<div class="sbd-loading">Błąd połączenia</div>' : '<div class="sbd-loading">Skonfiguruj URL w index.html</div>';
+    });
+  }
+
+  /* ── PLACES TABLE ─────────────────────────────── */
+  let currentPage = 1;
+  let placesTypes = [];
+
+  async function loadTypes() {
+    const data = await callAPI('types');
+    if (data && data.types) {
+      placesTypes = data.types;
+      const sel = document.getElementById('filter-type');
+      if (sel) {
+        sel.innerHTML = '<option value="">Wszystkie typy</option>' +
+          placesTypes.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
+      }
+    }
+  }
+
+  async function loadPlaces(page = 1) {
+    currentPage = page;
+    const container = document.getElementById('places-container');
+    if (!container) return;
+
+    container.innerHTML = `<div class="table-wrap"><div class="table-state"><div class="table-spinner"></div><div class="table-state-title">Ładowanie…</div></div></div>`;
+
+    const search = document.getElementById('filter-search')?.value.trim() || '';
+    const type   = document.getElementById('filter-type')?.value   || '';
+    const status = document.getElementById('filter-status')?.value || '';
+
+    const data = await callAPI('places', { page, search, type, status });
+
+    if (!data) {
+      renderPlacesEmpty(container, !APPS_SCRIPT_URL);
+      return;
+    }
+    if (data.error) {
+      container.innerHTML = `<div class="table-wrap"><div class="table-state"><div class="table-state-icon">⚠️</div><div class="table-state-title">Błąd połączenia</div><div class="table-state-desc">${escHtml(data.error)}</div></div></div>`;
+      return;
+    }
+
+    renderPlacesTable(container, data);
+  }
+
+  function renderPlacesTable(container, data) {
+    if (!data.items || !data.items.length) {
+      container.innerHTML = `<div class="table-wrap"><div class="table-state">
+        <div class="table-state-icon">🔍</div>
+        <div class="table-state-title">Brak wyników</div>
+        <div class="table-state-desc">Nie znaleziono miejsc pasujących do filtrów. Spróbuj zmienić kryteria wyszukiwania.</div>
+      </div></div>`;
+      return;
+    }
+
+    const rows = data.items.map(item => {
+      const badge  = statusBadge(item.code, item.status);
+      const doStr  = item.dofollow === true || String(item.dofollow).toLowerCase() === 'tak' || item.dofollow === 1 ? '✓' : '—';
+      return `<tr>
+        <td class="td-url">
+          <a href="${escHtml(item.url)}" target="_blank" rel="noopener" title="${escHtml(item.url)}">${escHtml(truncate(item.url, 48))}</a>
+          ${item.name ? `<div class="td-name">${escHtml(item.name)}</div>` : ''}
+        </td>
+        <td><span class="type-pill">${escHtml(item.type || '—')}</span></td>
+        <td>${badge}</td>
+        <td class="td-num">${item.da || '—'}</td>
+        <td class="td-num">${item.dr || '—'}</td>
+        <td class="td-num" style="color:var(--${doStr==='✓'?'success':'text-3'})">${doStr}</td>
+        <td class="td-date">${item.lastCheck || '—'}</td>
+      </tr>`;
+    }).join('');
+
+    const pagination = renderPagination(data.page, data.pages, data.total);
+
+    container.innerHTML = `
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr>
+              <th>URL / Nazwa</th>
+              <th>Typ</th>
+              <th>Status</th>
+              <th style="text-align:center">DA</th>
+              <th style="text-align:center">DR</th>
+              <th style="text-align:center">DoF.</th>
+              <th>Sprawdzono</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        ${data.total > 0 ? `<div class="table-footer">
+          <span class="table-count">Wyniki: <strong>${data.total}</strong> miejsc${data.pages > 1 ? ` (strona ${data.page} z ${data.pages})` : ''}</span>
+          ${pagination}
+        </div>` : ''}
+      </div>`;
+  }
+
+  function renderPlacesEmpty(container, noUrl) {
+    container.innerHTML = `<div class="table-wrap"><div class="table-state">
+      <div class="table-state-icon">📋</div>
+      <div class="table-state-title">${noUrl ? 'Brak konfiguracji' : 'Baza jest pusta'}</div>
+      <div class="table-state-desc">${noUrl
+        ? 'Wklej URL Web App w pliku index.html (stała APPS_SCRIPT_URL) i prześlij na GitHub.'
+        : 'Nie ma jeszcze żadnych miejsc w bazie. Dodaj pierwsze klikając "Dodaj nową".'
+      }</div>
+    </div></div>`;
+  }
+
+  function renderPagination(page, pages, total) {
+    if (pages <= 1) return '';
+    const btns = [];
+    btns.push(`<button class="pg-btn" onclick="loadPlaces(${page-1})" ${page<=1?'disabled':''}>‹</button>`);
+    for (let i = 1; i <= pages; i++) {
+      if (pages > 7 && i > 2 && i < pages - 1 && Math.abs(i - page) > 1) {
+        if (i === 3 || i === pages - 2) btns.push('<span style="padding:0 4px;color:var(--text-3)">…</span>');
+        continue;
+      }
+      btns.push(`<button class="pg-btn ${i===page?'active':''}" onclick="loadPlaces(${i})">${i}</button>`);
+    }
+    btns.push(`<button class="pg-btn" onclick="loadPlaces(${page+1})" ${page>=pages?'disabled':''}>›</button>`);
+    return `<div class="pagination">${btns.join('')}</div>`;
+  }
+
+  function statusBadge(code, label) {
+    if (!code && !label) return `<span class="status-badge status-none">Nie sprawdzono</span>`;
+    const c = parseInt(code) || 0;
+    if (c >= 200 && c < 300) return `<span class="status-badge status-ok">✓ OK (${c})</span>`;
+    if (c >= 300 && c < 400) return `<span class="status-badge status-redir">↪ ${c}</span>`;
+    if (c >= 400)            return `<span class="status-badge status-err">✗ ${c}</span>`;
+    if (label && label.toLowerCase().includes('niedostępna')) return `<span class="status-badge status-err">✗ Niedostępna</span>`;
+    return `<span class="status-badge status-none">${escHtml(label || '—')}</span>`;
+  }
+
+  function clearFilters() {
+    const s = document.getElementById('filter-search');   if (s) s.value = '';
+    const t = document.getElementById('filter-type');     if (t) t.value = '';
+    const f = document.getElementById('filter-status');   if (f) f.value = '';
+    loadPlaces(1);
+  }
+
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadPlaces(1), 380);
+  }
+
+  function truncate(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+
+  /* ── USER ROLE FROM SHEETS ────────────────────── */
+  async function loadUserRole(email) {
+    const data = await callAPI('user', { email });
+    if (data && data.role) {
+      sessionStorage.setItem('sld_role', data.role);
+      return data.role;
+    }
+    // fallback to hardcoded list
+    return ADMIN_EMAILS.includes(email) ? 'admin' : 'user';
   }
 
   /* ── LOADER ───────────────────────────────────── */
