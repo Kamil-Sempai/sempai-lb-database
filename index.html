@@ -818,10 +818,11 @@
 
 <script>
   /* ── CONFIG ───────────────────────────────────── */
-  const CLIENT_ID      = '287347548251-rp82vva0lt7i4rmjpnss3tca9dhuutf3.apps.googleusercontent.com';
-  const ALLOWED_DOMAIN = 'sempai.pl';
-  const ADMIN_EMAILS   = ['kamil.zalewski@sempai.pl'];
+  const CLIENT_ID       = '287347548251-rp82vva0lt7i4rmjpnss3tca9dhuutf3.apps.googleusercontent.com';
+  const ALLOWED_DOMAIN  = 'sempai.pl';
+  const ADMIN_EMAILS    = ['kamil.zalewski@sempai.pl'];
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkiZM6kfRyG0UXVF-Rmkk9ZjK-Upt5fR0aiJQC_lehhKBY8VLhQ_9kO1CDMhHtzZSatg/exec';
+  const SPREADSHEET_ID  = '1mZG_JofdxPuCHZjDuUF1vHTH2204SZ4XYtGZiS3ad7M';
   const THEME_KEY      = 'sld_theme';
   const SESSION_KEY    = 'sld_user';
   const FOLDER_KEY     = 'sld_folder';
@@ -1138,22 +1139,13 @@
     refreshFolderDisplay();
     hideLoader();
 
-    // Warm up Apps Script immediately in background
-    warmupScript();
-
-    // Load all data in a single combined request
-    if (APPS_SCRIPT_URL) {
-      loadUserRole(user.email).then(role => {
-        sessionStorage.setItem('sld_role', role);
-        applyRole(role);
-        const pr = document.getElementById('prof-role'); if (pr) pr.textContent = role === 'admin' ? 'Administrator' : 'Specjalista SEO';
-      });
-      loadInitialData();
-    } else {
-      renderStatsPlaceholder();
-      const container = document.getElementById('places-container');
-      if (container) renderPlacesEmpty(container, true);
-    }
+    // Load all data via direct Sheets API (fast) + stale-while-revalidate cache
+    loadInitialData();
+    loadUserRole(user.email).then(role => {
+      sessionStorage.setItem('sld_role', role);
+      applyRole(role);
+      const pr = document.getElementById('prof-role'); if (pr) pr.textContent = role === 'admin' ? 'Administrator' : 'Specjalista SEO';
+    });
 
     if (!localStorage.getItem(SETUP_KEY)) setTimeout(()=>openPicker('setup'), 500);
   }
@@ -1179,11 +1171,13 @@
     document.getElementById('login-error').classList.remove('show');
   }
 
-  /* ── SHEETS API ───────────────────────────────── */
-  let searchTimer   = null;
-  const CACHE_KEY   = 'sld_cache_types';
-  const CACHE_TTL   = 30 * 60 * 1000; // 30 minut
+  /* ── DATA LAYER — Opcja A: bezpośrednie Sheets API + Opcja B: cache ── */
+  let searchTimer  = null;
+  let allPlacesRaw = []; // all rows from sheet — filtering done client-side (instant)
+  const DATA_KEY   = 'sld_data_v2';
+  const DATA_TTL   = 5 * 60 * 1000; // 5 min stale-while-revalidate
 
+  /* Apps Script — tylko do ZAPISU (POST) */
   async function callAPI(action, extra = {}, method = 'GET') {
     if (!currentUser?.access_token) return null;
     if (!APPS_SCRIPT_URL) return null;
@@ -1201,86 +1195,136 @@
         const url = new URL(APPS_SCRIPT_URL);
         url.searchParams.set('action', action);
         url.searchParams.set('token', currentUser.access_token);
-        Object.entries(extra).forEach(([k, v]) => { if (v !== undefined && v !== '') url.searchParams.set(k, String(v)); });
+        Object.entries(extra).forEach(([k,v]) => { if(v!==undefined&&v!=='') url.searchParams.set(k,String(v)); });
         r = await fetch(url.toString(), { signal: controller.signal });
       }
       clearTimeout(timeout);
       return await r.json();
-    } catch (e) {
-      if (e.name === 'AbortError') return { error: 'timeout' };
-      console.error('API error:', e);
-      return { error: e.message || 'network_error' };
+    } catch(e) {
+      if(e.name==='AbortError') return { error: 'timeout' };
+      return { error: e.message||'network_error' };
     }
   }
 
-  // Warm-up: ping Apps Script in background right after login
-  function warmupScript() {
-    if (!APPS_SCRIPT_URL) return;
-    const url = new URL(APPS_SCRIPT_URL);
-    url.searchParams.set('action', 'ping');
-    url.searchParams.set('token', currentUser.access_token);
-    fetch(url.toString()).catch(() => {});
+  /* Bezpośredni odczyt z Google Sheets API v4 */
+  async function readSheet(range) {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
+    const r = await fetch(url, {
+      headers: { Authorization: 'Bearer ' + currentUser.access_token }
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error.message || 'Sheets API error');
+    return data.values || [];
   }
 
-  // Cache helpers
-  function getCachedTypes() {
+  /* Cache helpers */
+  function getCached() {
     try {
-      const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
-      if (c && Date.now() - c.ts < CACHE_TTL) return c.data;
-    } catch(_) {}
-    return null;
+      const c = JSON.parse(localStorage.getItem(DATA_KEY) || 'null');
+      return c || null;
+    } catch(_) { return null; }
   }
-  function setCachedTypes(types) {
-    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: types })); } catch(_) {}
+  function saveCache(payload) {
+    try { localStorage.setItem(DATA_KEY, JSON.stringify({ ts: Date.now(), ...payload })); } catch(_) {}
+  }
+  function isStale(cached) { return !cached || (Date.now() - (cached.ts||0)) > DATA_TTL; }
+
+  /* Parse raw Sheets rows → typed objects */
+  function parseTypes(cfgRows) {
+    const row = cfgRows.find(r => r[0] === 'typy_miejsc');
+    if (!row || !row[1]) return ['Profile','Social Media','Ogłoszenia','Katalogi'];
+    return row[1].split(',').map(t => t.trim()).filter(Boolean);
   }
 
-  /* ── INITIAL DATA LOAD (single combined request) ── */
+  function parsePlace(row) {
+    return {
+      id: row[0]||'', url: row[1]||'', name: row[2]||'',
+      type: row[3]||'', kategoria: row[4]||'',
+      da: row[5]||'', dr: row[6]||'', dofollow: row[7]||'',
+      status: row[8]||'', code: parseInt(row[9])||0,
+      lastCheck: row[10]||'', addedBy: row[11]||'', notes: row[13]||''
+    };
+  }
+
+  function calcStats(placeRows, verifRows, types) {
+    let total=0, active=0, inactive=0;
+    const byType={}, activeByType={}, inactiveByType={};
+    types.forEach(t => { byType[t]=0; activeByType[t]=0; inactiveByType[t]=0; });
+    placeRows.forEach(row => {
+      if(!row[1]) return;
+      total++;
+      const typ=row[3]||'Inne', code=parseInt(row[9])||0;
+      if(!byType[typ]) { byType[typ]=0; activeByType[typ]=0; inactiveByType[typ]=0; }
+      byType[typ]++;
+      if(code>=200&&code<300){ active++; activeByType[typ]=(activeByType[typ]||0)+1; }
+      else if(code>=400||(code===0&&String(row[8]||'').toLowerCase().includes('niedostępna'))){ inactive++; inactiveByType[typ]=(inactiveByType[typ]||0)+1; }
+    });
+    const pending = verifRows.filter(r=>r[0]&&(r[8]==='do_weryfikacji'||r[8]==='czeka_na_akceptacje')).length;
+    return { total, active, inactive, pending, byType, activeByType, inactiveByType };
+  }
+
+  /* ── INITIAL LOAD: stale-while-revalidate ────────── */
   async function loadInitialData() {
-    // 1. Show table in loading state immediately
     const container = document.getElementById('places-container');
-    if (container) {
-      container.innerHTML = `<div class="table-wrap"><div class="table-state"><div class="table-spinner"></div><div class="table-state-title">Ładowanie…</div><div class="table-state-desc">Łączenie z Google Sheets</div></div></div>`;
+
+    // 1. Show cached data INSTANTLY if available
+    const cached = getCached();
+    if (cached?.types) { allTypes = cached.types; populateTypeFilter(cached.types); }
+    if (cached?.places) {
+      allPlacesRaw = cached.places;
+      renderFilteredPlaces();
+      if (cached?.stats) renderStats(cached.stats);
+      // Show subtle refresh indicator if stale
+      if (isStale(cached)) {
+        const footer = container?.querySelector('.table-footer');
+        if (footer) footer.insertAdjacentHTML('afterbegin','<span style="font-size:11px;color:var(--text-3);margin-right:auto">⟳ odświeżanie…</span>');
+      } else {
+        return; // fresh cache — skip network
+      }
+    } else {
+      // No cache — show spinner
+      if (container) container.innerHTML = `<div class="table-wrap"><div class="table-state"><div class="table-spinner"></div><div class="table-state-title">Ładowanie bazy…</div><div class="table-state-desc">Pierwsze ładowanie może chwilę potrwać</div></div></div>`;
     }
 
-    // 2. Apply cached types instantly (no wait)
-    const cached = getCachedTypes();
-    if (cached) {
-      allTypes = cached;
-      populateTypeFilter(cached);
-    }
+    // 2. Fetch all sheets in parallel (direct Sheets API — szybkie!)
+    try {
+      const [placeValues, verifValues, cfgValues] = await Promise.all([
+        readSheet('baza_miejsc_lb!A:N'),
+        readSheet('weryfikacja!A:I'),
+        readSheet('konfiguracja!A:B')
+      ]);
 
-    // 3. Single API call — gets stats + types + places all at once
-    const data = await callAPI('init', { page: 1 });
+      const placeRows = placeValues.slice(1).filter(r=>r[1]); // skip header, skip empty
+      const verifRows = verifValues.slice(1).filter(r=>r[0]);
+      const types     = parseTypes(cfgValues);
+      const stats     = calcStats(placeRows, verifRows, types);
+      const places    = placeRows.map(parsePlace);
 
-    if (!data || data.error) {
-      renderStatsPlaceholder(data?.error);
-      if (container) {
-        const isTimeout = data?.error === 'timeout';
-        const msg = isTimeout
-          ? 'Apps Script potrzebuje chwili na start. Kliknij "Spróbuj ponownie" za 10–15 sekund.'
-          : (data?.error || 'Sprawdź czy Apps Script jest wdrożony.');
-        container.innerHTML = `<div class="table-wrap"><div class="table-state">
-          <div class="table-state-icon">${isTimeout ? '⏱' : '⚠️'}</div>
-          <div class="table-state-title">${isTimeout ? 'Przekroczono czas oczekiwania' : 'Błąd połączenia'}</div>
-          <div class="table-state-desc">${escHtml(msg)}</div>
+      // 3. Save to cache
+      saveCache({ types, places: placeRows, stats, pending: stats.pending });
+
+      // 4. Update UI
+      allTypes = types;
+      allPlacesRaw = placeRows;
+      populateTypeFilter(types);
+      renderStats(stats);
+      renderFilteredPlaces();
+
+      // Update verification badge
+      const bw = document.getElementById('badge-wer');
+      if (bw) { bw.textContent = stats.pending; bw.classList.toggle('hidden', !stats.pending); }
+
+    } catch(err) {
+      console.error('Sheets API error:', err);
+      if (!cached?.places) {
+        // No cache to fall back on — show error
+        if (container) container.innerHTML = `<div class="table-wrap"><div class="table-state">
+          <div class="table-state-icon">⚠️</div>
+          <div class="table-state-title">Błąd ładowania</div>
+          <div class="table-state-desc">${escHtml(err.message)}</div>
           <button onclick="loadInitialData()" style="margin-top:16px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Spróbuj ponownie</button>
         </div></div>`;
-      }
-      return;
-    }
-
-    // 4. Update everything at once
-    if (data.stats) renderStats(data.stats);
-    if (data.types) {
-      allTypes = data.types;
-      setCachedTypes(data.types);
-      populateTypeFilter(data.types);
-    }
-    if (data.places && container) {
-      try { renderPlacesTable(container, data.places); }
-      catch(err) {
-        console.error('renderPlacesTable error:', err);
-        container.innerHTML = `<div class="table-wrap"><div class="table-state"><div class="table-state-icon">⚠️</div><div class="table-state-title">Błąd renderowania</div><div class="table-state-desc">${escHtml(err.message)}</div><button onclick="loadInitialData()" style="margin-top:16px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">↻ Spróbuj ponownie</button></div></div>`;
+        renderStatsPlaceholder(err.message);
       }
     }
   }
@@ -1288,16 +1332,56 @@
   function populateTypeFilter(types) {
     const sel = document.getElementById('filter-type');
     if (!sel) return;
-    const icons = { 'Profile':'👤', 'Social Media':'📱', 'Ogłoszenia':'📢', 'Katalogi':'📂' };
+    const icons = {'Profile':'👤','Social Media':'📱','Ogłoszenia':'📢','Katalogi':'📂'};
     sel.innerHTML = '<option value="">Wszystkie typy</option>' +
       types.map(t => `<option value="${escHtml(t)}">${icons[t]||''} ${escHtml(t)}</option>`).join('');
   }
 
+  /* ── CLIENT-SIDE FILTERING (instant, no API call) ── */
+  function renderFilteredPlaces() {
+    const container = document.getElementById('places-container');
+    if (!container) return;
+
+    const search = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
+    const typeF  = document.getElementById('filter-type')?.value  || '';
+    const statF  = document.getElementById('filter-status')?.value || '';
+    const PAGE_SIZE = 30;
+    const page = currentPage || 1;
+
+    const filtered = allPlacesRaw.filter(row => {
+      if (!row[1]) return false;
+      if (typeF && row[3] !== typeF) return false;
+      if (statF) {
+        const code = parseInt(row[9])||0;
+        if (statF==='ok'    && !(code>=200&&code<300)) return false;
+        if (statF==='error' && !(code>=400))           return false;
+        if (statF==='unknown' && code!==0)             return false;
+      }
+      if (search && !String(row[1]+row[2]+row[13]).toLowerCase().includes(search)) return false;
+      return true;
+    });
+
+    const total = filtered.length;
+    const items = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE).map(parsePlace);
+    try {
+      renderPlacesTable(container, { items, total, page, pages: Math.ceil(total/PAGE_SIZE) });
+    } catch(err) {
+      console.error('render error:', err);
+    }
+  }
+
+  /* favicon helper */
+  function getFavicon(url) {
+    try {
+      const domain = new URL(url.startsWith('http') ? url : 'https://'+url).hostname;
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    } catch(_) { return null; }
+  }
+
   /* ── STATS ────────────────────────────────────── */
   async function loadStats() {
-    const data = await callAPI('stats');
-    if (!data || data.error) { renderStatsPlaceholder(data?.error); return; }
-    renderStats(data);
+    // kept for backwards compatibility — now stats are computed client-side
+    loadInitialData();
   }
 
   function renderStats(d) {
@@ -1359,37 +1443,7 @@
 
   async function loadPlaces(page = 1) {
     currentPage = page;
-    const container = document.getElementById('places-container');
-    if (!container) return;
-
-    container.innerHTML = `<div class="table-wrap"><div class="table-state"><div class="table-spinner"></div><div class="table-state-title">Ładowanie…</div><div class="table-state-desc">Łączenie z Google Sheets</div></div></div>`;
-
-    const search = document.getElementById('filter-search')?.value.trim() || '';
-    const type   = document.getElementById('filter-type')?.value   || '';
-    const status = document.getElementById('filter-status')?.value || '';
-
-    const data = await callAPI('places', { page, search, type, status });
-
-    if (!data || data.error) {
-      const isTimeout = data?.error === 'timeout';
-      const msg = isTimeout
-        ? 'Apps Script potrzebuje chwili na start (cold start). Kliknij "Spróbuj ponownie" za 10–15 sekund.'
-        : (data?.error || 'Sprawdź czy Apps Script jest wdrożony i czy uruchomiłeś setupSheets().');
-      container.innerHTML = `<div class="table-wrap"><div class="table-state">
-        <div class="table-state-icon">${isTimeout ? '⏱' : '⚠️'}</div>
-        <div class="table-state-title">${isTimeout ? 'Przekroczono czas oczekiwania' : 'Błąd połączenia'}</div>
-        <div class="table-state-desc">${escHtml(msg)}</div>
-        <button onclick="loadPlaces(1)" style="margin-top:16px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Spróbuj ponownie</button>
-      </div></div>`;
-      return;
-    }
-
-    try {
-      renderPlacesTable(container, data);
-    } catch(err) {
-      console.error('renderPlacesTable error:', err);
-      container.innerHTML = `<div class="table-wrap"><div class="table-state"><div class="table-state-icon">⚠️</div><div class="table-state-title">Błąd renderowania</div><div class="table-state-desc">${escHtml(err.message)}</div><button onclick="loadPlaces(1)" style="margin-top:16px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Spróbuj ponownie</button></div></div>`;
-    }
+    renderFilteredPlaces();
   }
 
   function renderPlacesTable(container, data) {
@@ -1407,14 +1461,21 @@
     }
 
     const rows = data.items.map(item => {
-      const badge  = statusBadge(item.code, item.status);
-      const doStr  = item.dofollow === true || String(item.dofollow).toLowerCase() === 'tak' || item.dofollow === 1 ? '✓' : '—';
-      const isSM   = item.type === 'Social Media';
-      const accBtn = isSM ? `<span class="accounts-btn" onclick="openAccountsModal('${escHtml(item.id)}','${escHtml(item.url)}','${escHtml(item.name||'')}')">👤 Konta</span>` : '';
+      const badge   = statusBadge(item.code, item.status);
+      const doStr   = item.dofollow === true || String(item.dofollow).toLowerCase() === 'tak' || item.dofollow === 1 ? '✓' : '—';
+      const isSM    = item.type === 'Social Media';
+      const accBtn  = isSM ? `<span class="accounts-btn" onclick="openAccountsModal('${escAttr(item.id)}','${escAttr(item.url)}','${escAttr(item.name||'')}')">👤 Konta</span>` : '';
+      const favicon = getFavicon(item.url);
+      const favImg  = favicon ? `<img src="${favicon}" width="16" height="16" style="border-radius:3px;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:7px" onerror="this.remove()">` : '';
       return `<tr>
         <td class="td-url">
-          <a href="${escHtml(item.url)}" target="_blank" rel="noopener" title="${escHtml(item.url)}">${escHtml(truncate(item.url, 48))}</a>
-          ${item.name ? `<div class="td-name">${escHtml(item.name)}</div>` : ''}
+          <div style="display:flex;align-items:flex-start">
+            <span style="margin-top:2px;flex-shrink:0">${favImg}</span>
+            <div style="min-width:0">
+              <a href="${escHtml(item.url)}" target="_blank" rel="noopener" title="${escHtml(item.url)}">${escHtml(truncate(item.url, 44))}</a>
+              ${item.name ? `<div class="td-name">${escHtml(item.name)}</div>` : ''}
+            </div>
+          </div>
         </td>
         <td><span class="type-pill">${escHtml(item.type || '—')}</span> ${accBtn}</td>
         <td>${badge}</td>
@@ -1495,7 +1556,7 @@
 
   function debounceSearch() {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => loadPlaces(1), 380);
+    searchTimer = setTimeout(() => { currentPage = 1; renderFilteredPlaces(); }, 200);
   }
 
   function truncate(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
