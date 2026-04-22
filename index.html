@@ -470,6 +470,32 @@
     .mon-progress-bar{height:4px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:6px}
     .mon-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#10B981);border-radius:99px;width:0%;transition:width 0.4s ease}
 
+    /* Monitoring checkboxes & selection bar */
+    .mon-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background var(--t)}
+    .mon-row:last-child{border-bottom:none;padding-bottom:0}
+    .mon-row:hover{background:var(--bg-input);margin:0 -18px;padding-left:18px;padding-right:18px;border-radius:var(--r)}
+    .mon-row.selected{background:rgba(59,123,255,0.06);margin:0 -18px;padding-left:18px;padding-right:18px;border-radius:var(--r)}
+
+    .mon-cb{width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--t);background:transparent}
+    .mon-cb.checked{background:var(--accent);border-color:var(--accent)}
+    .mon-cb.checked::after{content:'✓';font-size:10px;color:#fff;font-weight:700}
+    .mon-select-all{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-3);cursor:pointer;margin-bottom:10px;user-select:none}
+    .mon-select-all:hover{color:var(--text-2)}
+
+    /* Sticky action bar */
+    .mon-action-bar{
+      position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+      background:var(--bg-card);border:1px solid var(--border);
+      border-radius:var(--r-xl);padding:12px 20px;
+      display:flex;align-items:center;gap:14px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.25);
+      transition:transform 0.3s cubic-bezier(0.22,1,0.36,1);
+      z-index:200;pointer-events:none;
+    }
+    .mon-action-bar.show{transform:translateX(-50%) translateY(0);pointer-events:all}
+    .mon-action-count{font-size:13px;font-weight:600;color:var(--text-1)}
+    .mon-action-count span{color:var(--accent)}
+
     /* SHARED COMPONENTS */
     .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .sec-title{font-size:14px;font-weight:600;color:var(--text-1)}
@@ -1083,6 +1109,16 @@
       <button class="btn btn-ghost btn-sm" onclick="closeModal('accounts-modal')">Zamknij</button>
     </div>
   </div>
+</div>
+
+<!-- MONITORING SELECTION ACTION BAR -->
+<div class="mon-action-bar" id="mon-action-bar">
+  <div class="mon-action-count">Zaznaczono: <span id="mon-sel-count">0</span></div>
+  <button class="btn btn-ghost btn-sm" onclick="clearMonSelection()">Odznacz</button>
+  <button class="btn btn-primary btn-sm" id="mon-check-sel-btn" onclick="triggerSelectedCheck()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+    Sprawdź zaznaczone
+  </button>
 </div>
 
 <script>
@@ -2645,11 +2681,12 @@
   }
 
   /* ── MONITORING ────────────────────────────────── */
+  let monSelected = new Set(); // selected place IDs
 
   function monBadge(code) {
-    if (!code || code === 0)   return `<span class="mon-badge mon-badge-unknown">❓ Nie sprawdzono</span>`;
-    if (code >= 200 && code < 300) return `<span class="mon-badge mon-badge-ok">✅ OK ${code}</span>`;
-    if (code >= 300 && code < 400) return `<span class="mon-badge mon-badge-redirect">↪ ${code}</span>`;
+    if (!code || code === 0)        return `<span class="mon-badge mon-badge-unknown">❓ Nie sprawdzono</span>`;
+    if (code >= 200 && code < 300)  return `<span class="mon-badge mon-badge-ok">✅ OK ${code}</span>`;
+    if (code >= 300 && code < 400)  return `<span class="mon-badge mon-badge-redirect">↪ ${code}</span>`;
     return `<span class="mon-badge mon-badge-error">❌ Błąd ${code}</span>`;
   }
 
@@ -2659,14 +2696,13 @@
     const filter = document.getElementById('mon-filter-status')?.value || '';
 
     // Compute stats
-    let ok=0, red=0, err=0, unk=0;
-    let lastCheckDate = '';
+    let ok=0, red=0, err=0, unk=0, lastCheckDate='';
     allPlacesRaw.forEach(row => {
       const code = parseInt(row[9]) || 0;
-      if (!code)                        unk++;
-      else if (code>=200&&code<300)     ok++;
-      else if (code>=300&&code<400)     red++;
-      else                              err++;
+      if (!code)                       unk++;
+      else if (code>=200&&code<300)    ok++;
+      else if (code>=300&&code<400)    red++;
+      else                             err++;
       if (row[10] && row[10] > lastCheckDate) lastCheckDate = row[10];
     });
 
@@ -2678,17 +2714,17 @@
       ? 'Ostatnie sprawdzenie: ' + String(lastCheckDate).slice(0,10)
       : 'Ostatnie sprawdzenie: nigdy';
 
-    // Problems (errors)
+    // Problems section
     const problems = allPlacesRaw.filter(r => {
       const code = parseInt(r[9])||0;
-      return code >= 400 || (code === 0 && String(r[8]||'').toLowerCase().includes('niedostępna'));
+      return code >= 400 || (code===0 && String(r[8]||'').toLowerCase().includes('niedostępna'));
     });
     const probSection = document.getElementById('mon-problems-section');
     const probList    = document.getElementById('mon-problems-list');
     if (problems.length) {
       probSection.style.display = '';
       document.getElementById('mon-problems-count').textContent = problems.length + ' miejsc';
-      probList.innerHTML = problems.map(r => monRowHTML(r)).join('');
+      probList.innerHTML = monListHTML(problems);
     } else {
       probSection.style.display = 'none';
     }
@@ -2697,30 +2733,47 @@
     const filtered = allPlacesRaw.filter(r => {
       if (!r[1]) return false;
       const code = parseInt(r[9])||0;
-      if (filter === 'ok')       return code>=200&&code<300;
-      if (filter === 'redirect') return code>=300&&code<400;
-      if (filter === 'error')    return code>=400;
-      if (filter === 'unknown')  return !code;
+      if (filter==='ok')       return code>=200&&code<300;
+      if (filter==='redirect') return code>=300&&code<400;
+      if (filter==='error')    return code>=400;
+      if (filter==='unknown')  return !code;
       return true;
     });
 
     const allList = document.getElementById('mon-all-list');
-    allList.innerHTML = filtered.length
-      ? filtered.map(r => monRowHTML(r)).join('')
-      : '<div style="font-size:13px;color:var(--text-3);padding:8px 0">Brak wyników.</div>';
+    if (filtered.length) {
+      allList.innerHTML = `
+        <div class="mon-select-all" onclick="toggleSelectAll()">
+          <div class="mon-cb" id="mon-cb-all"></div>
+          <span>Zaznacz wszystkie (${filtered.length})</span>
+        </div>
+        ${monListHTML(filtered)}`;
+    } else {
+      allList.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:8px 0">Brak wyników.</div>';
+    }
+    updateSelectionBar();
+  }
+
+  function monListHTML(rows) {
+    return rows.map(r => monRowHTML(r)).join('');
   }
 
   function monRowHTML(row) {
+    const id   = String(row[0]);
     const url  = row[1] || '';
     const name = row[2] || '';
     const code = parseInt(row[9]) || 0;
     const date = row[10] ? String(row[10]).slice(0,10) : '—';
     const fav  = getFavicon(url);
-    const favImg = fav ? `<img class="mon-row-favicon" src="${fav}" onerror="this.style.display='none'" alt="">` : '<span style="width:16px;flex-shrink:0"></span>';
-    return `<div class="mon-row">
+    const favImg = fav
+      ? `<img class="mon-row-favicon" src="${fav}" onerror="this.style.display='none'" alt="">`
+      : '<span style="width:16px;flex-shrink:0"></span>';
+    const isSel = monSelected.has(id);
+    return `<div class="mon-row ${isSel?'selected':''}" id="mrow-${escAttr(id)}" onclick="toggleMonRow('${escAttr(id)}')">
+      <div class="mon-cb ${isSel?'checked':''}" id="mcb-${escAttr(id)}"></div>
       ${favImg}
       <div style="flex:1;min-width:0">
-        <a class="mon-row-url" href="${escHtml(url.startsWith('http')?url:'https://'+url)}" target="_blank" rel="noopener">${escHtml(truncate(url,55))}</a>
+        <a class="mon-row-url" href="${escHtml(url.startsWith('http')?url:'https://'+url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escHtml(truncate(url,55))}</a>
         ${name ? `<div class="mon-row-name">${escHtml(name)}</div>` : ''}
       </div>
       <div class="mon-row-status">${monBadge(code)}</div>
@@ -2728,7 +2781,90 @@
     </div>`;
   }
 
+  function toggleMonRow(id) {
+    if (monSelected.has(id)) monSelected.delete(id);
+    else monSelected.add(id);
+    // Update row visual
+    const row = document.getElementById('mrow-'+id);
+    const cb  = document.getElementById('mcb-'+id);
+    if (row) row.classList.toggle('selected', monSelected.has(id));
+    if (cb)  cb.classList.toggle('checked',   monSelected.has(id));
+    updateSelectionBar();
+  }
+
+  function toggleSelectAll() {
+    // Get all visible rows from mon-all-list
+    const allIds = allPlacesRaw.filter(r=>r[1]).map(r=>String(r[0]));
+    const filter = document.getElementById('mon-filter-status')?.value || '';
+    const visibleRows = allPlacesRaw.filter(r => {
+      if (!r[1]) return false;
+      const code = parseInt(r[9])||0;
+      if (filter==='ok')       return code>=200&&code<300;
+      if (filter==='redirect') return code>=300&&code<400;
+      if (filter==='error')    return code>=400;
+      if (filter==='unknown')  return !code;
+      return true;
+    });
+    const visIds = visibleRows.map(r=>String(r[0]));
+    const allChecked = visIds.every(id => monSelected.has(id));
+    if (allChecked) visIds.forEach(id => monSelected.delete(id));
+    else visIds.forEach(id => monSelected.add(id));
+    // Re-render list
+    renderMonitoring();
+  }
+
+  function clearMonSelection() {
+    monSelected.clear();
+    renderMonitoring();
+  }
+
+  function updateSelectionBar() {
+    const bar   = document.getElementById('mon-action-bar');
+    const count = document.getElementById('mon-sel-count');
+    const n = monSelected.size;
+    if (count) count.textContent = n;
+    if (bar)   bar.classList.toggle('show', n > 0);
+    // Update "select all" checkbox
+    const cbAll = document.getElementById('mon-cb-all');
+    if (cbAll) {
+      const filter = document.getElementById('mon-filter-status')?.value || '';
+      const visible = allPlacesRaw.filter(r => {
+        if (!r[1]) return false;
+        const code = parseInt(r[9])||0;
+        if (filter==='ok')       return code>=200&&code<300;
+        if (filter==='redirect') return code>=300&&code<400;
+        if (filter==='error')    return code>=400;
+        if (filter==='unknown')  return !code;
+        return true;
+      });
+      const allChecked = visible.length > 0 && visible.every(r => monSelected.has(String(r[0])));
+      cbAll.classList.toggle('checked', allChecked);
+    }
+  }
+
   let checkInProgress = false;
+
+  async function triggerSelectedCheck() {
+    if (checkInProgress || !monSelected.size) return;
+    const n = monSelected.size;
+    if (!confirm(`Sprawdzić ${n} zaznaczon${n===1?'ą':'ych'} domen${n===1?'ę':''}?`)) return;
+
+    checkInProgress = true;
+    const btn = document.getElementById('mon-check-sel-btn');
+    if (btn) { btn.disabled=true; btn.textContent='Sprawdzanie…'; }
+
+    const data = await callAPI('checkSelected', { ids: [...monSelected] }, 'POST');
+    checkInProgress = false;
+    if (btn) { btn.disabled=false; btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Sprawdź zaznaczone`; }
+
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+
+    monSelected.clear();
+    await refreshDataInBackground();
+    renderMonitoring();
+    alert(`✅ Sprawdzono ${data.checked||0} domen.`);
+  }
+
   async function triggerDomainCheck() {
     if (checkInProgress) return;
     if (!confirm('Uruchomić sprawdzanie wszystkich domen? Może to potrwać kilka minut.')) return;
@@ -2743,27 +2879,19 @@
     btn.disabled = false;
     btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Sprawdź teraz`;
 
-    if (!data || data.error) {
-      alert('Błąd: ' + (data?.error || 'Sprawdzanie nie powiodło się. Spróbuj ponownie.'));
-      return;
-    }
-
-    // Refresh data from Sheets
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Sprawdzanie nie powiodło się.')); return; }
     await refreshDataInBackground();
     renderMonitoring();
-    alert(`✅ Sprawdzono ${data.checked || 0} domen.`);
+    alert(`✅ Sprawdzono ${data.checked||0} domen.`);
   }
 
   async function saveSchedule() {
     const val = document.getElementById('mon-schedule-sel')?.value;
-    let data;
-    if (!val) {
-      data = await callAPI('deleteSchedule', {}, 'POST');
-    } else {
-      data = await callAPI('setSchedule', { hours: val }, 'POST');
-    }
+    const data = val
+      ? await callAPI('setSchedule',    { hours: val }, 'POST')
+      : await callAPI('deleteSchedule', {},             'POST');
     if (data?.error) { alert('Błąd: ' + data.error); return; }
-    alert(val ? `✅ Harmonogram ustawiony: co ${val}h` : '✅ Harmonogram wyłączony.');
+    alert(val ? `✅ Harmonogram: co ${val}h` : '✅ Harmonogram wyłączony.');
   }
 
   function escAttr(s){return String(s==null?'':s).replace(/'/g,'&#39;').replace(/"/g,'&quot;')}
