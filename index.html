@@ -1413,9 +1413,8 @@
         <button onclick="loadInitialData()" style="margin-top:8px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Spróbuj ponownie</button>
       </div></div>`;
       if (!cached?.places) renderStatsPlaceholder(err.message);
-        const rb = document.querySelector('.refresh-bar');
-        if (rb) rb.remove();
-      }
+      const rb = document.querySelector('.refresh-bar');
+      if (rb) rb.remove();
     }
   }
 
