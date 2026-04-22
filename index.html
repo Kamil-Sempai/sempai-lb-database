@@ -390,6 +390,38 @@
     .refresh-bar{height:3px;background:var(--border);overflow:hidden;border-radius:0}
     .refresh-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#7C3AED);width:0%;transition:width 0.2s linear;border-radius:99px}
 
+    /* ── COMMENTS ───────────────────────────────── */
+    .comment-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:600;background:transparent;border:1px solid var(--border);color:var(--text-3);cursor:pointer;transition:all var(--t);white-space:nowrap;font-family:var(--font)}
+    .comment-btn:hover{border-color:var(--border-2);color:var(--text-2);background:var(--bg-input)}
+    .comment-btn.has-comments{background:rgba(59,123,255,0.08);border-color:rgba(59,123,255,0.25);color:var(--accent)}
+    .comment-btn.has-comments:hover{background:rgba(59,123,255,0.14)}
+
+    .comments-row td{padding:0!important;border-top:none!important}
+    .comments-panel{
+      border-top:1px solid var(--border);
+      background:var(--bg-input);
+      animation:cmtIn 0.2s ease both;
+    }
+    @keyframes cmtIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+    .comments-inner{padding:16px 20px;max-width:900px}
+    .comments-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+    .comment-item{display:flex;gap:10px;align-items:flex-start}
+    .comment-avatar{width:28px;height:28px;border-radius:50%;background:rgba(59,123,255,0.15);border:1px solid rgba(59,123,255,0.25);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0;margin-top:1px}
+    .comment-body{flex:1;min-width:0}
+    .comment-meta{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+    .comment-author{font-size:12px;font-weight:600;color:var(--text-1)}
+    .comment-date{font-size:11px;color:var(--text-3)}
+    .comment-text{font-size:13px;color:var(--text-2);line-height:1.55;word-break:break-word}
+    .comment-del{width:22px;height:22px;border:none;background:transparent;cursor:pointer;color:var(--text-3);border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all var(--t);flex-shrink:0;margin-top:1px;opacity:0}
+    .comment-item:hover .comment-del{opacity:1}
+    .comment-del:hover{background:rgba(239,68,68,0.1);color:var(--danger)}
+    .comments-empty{font-size:12.5px;color:var(--text-3);font-style:italic;margin-bottom:14px}
+    .comment-loading{font-size:12px;color:var(--text-3);margin-bottom:14px}
+    .comment-add{display:flex;gap:8px;align-items:flex-end}
+    .comment-input{flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:13px;color:var(--text-1);outline:none;resize:none;min-height:36px;max-height:100px;transition:border-color var(--t);line-height:1.5}
+    .comment-input:focus{border-color:var(--accent)}
+    .comment-input::placeholder{color:var(--text-3)}
+
     /* SHARED COMPONENTS */
     .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     .sec-title{font-size:14px;font-weight:600;color:var(--text-1)}
@@ -1813,7 +1845,9 @@
       const accBtn  = isSM ? `<span class="accounts-btn" onclick="openAccountsModal('${escAttr(item.id)}','${escAttr(item.url)}','${escAttr(item.name||'')}')">👤 Konta</span>` : '';
       const favicon = getFavicon(item.url);
       const favImg  = favicon ? `<img src="${favicon}" width="16" height="16" style="border-radius:3px;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:7px" onerror="this.remove()">` : '';
-      return `<tr>
+      const rowId   = 'row-' + escAttr(item.id);
+      const cmtId   = 'cmt-' + escAttr(item.id);
+      return `<tr id="${rowId}">
         <td class="td-url">
           <div style="display:flex;align-items:flex-start">
             <span style="margin-top:2px;flex-shrink:0">${favImg}</span>
@@ -1829,6 +1863,21 @@
         <td class="td-num">${item.dr || '—'}</td>
         <td class="td-num" style="color:var(--${doStr==='✓'?'success':'text-3'})">${doStr}</td>
         <td class="td-date">${item.lastCheck || '—'}</td>
+        <td>
+          <button class="comment-btn" id="cbtn-${escAttr(item.id)}" onclick="toggleComments('${escAttr(item.id)}','${escAttr(item.url)}')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <span id="cbtn-label-${escAttr(item.id)}">Komentarze</span>
+          </button>
+        </td>
+      </tr>
+      <tr class="comments-row" id="${cmtId}" style="display:none">
+        <td colspan="8">
+          <div class="comments-panel">
+            <div class="comments-inner" id="cinner-${escAttr(item.id)}">
+              <div class="comment-loading">Ładowanie komentarzy…</div>
+            </div>
+          </div>
+        </td>
       </tr>`;
     }).join('');
 
@@ -1846,6 +1895,7 @@
               <th style="text-align:center">DR</th>
               <th style="text-align:center">DoF.</th>
               <th>Dodano</th>
+              <th></th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -1919,6 +1969,118 @@
       if (data && data.role) { sessionStorage.setItem('sld_role', data.role); return data.role; }
     } catch(_) {}
     return ADMIN_EMAILS.includes(email) ? 'admin' : 'user';
+  }
+
+  /* ── COMMENTS ─────────────────────────────────── */
+  const openCommentPanels = new Set(); // track which panels are open
+
+  async function toggleComments(placeId, url) {
+    const panel  = document.getElementById('cmt-' + placeId);
+    const btn    = document.getElementById('cbtn-' + placeId);
+    if (!panel) return;
+
+    const isOpen = panel.style.display !== 'none';
+    if (isOpen) {
+      panel.style.display = 'none';
+      openCommentPanels.delete(placeId);
+      btn.classList.remove('has-comments');
+      return;
+    }
+
+    panel.style.display = 'table-row';
+    openCommentPanels.add(placeId);
+    await loadComments(placeId, url);
+  }
+
+  async function loadComments(placeId, url) {
+    const inner = document.getElementById('cinner-' + placeId);
+    const btn   = document.getElementById('cbtn-' + placeId);
+    const label = document.getElementById('cbtn-label-' + placeId);
+    if (!inner) return;
+
+    inner.innerHTML = '<div class="comment-loading">Ładowanie komentarzy…</div>';
+
+    try {
+      // Read comments directly from Sheets API
+      const values = await readSheet('komentarze!A:F');
+      const rows   = values.slice(1).filter(r => r[0] && String(r[1]) === String(placeId));
+
+      // Update button count
+      const count = rows.length;
+      if (label) label.textContent = count > 0 ? `${count} ${count===1?'komentarz':count<5?'komentarze':'komentarzy'}` : 'Komentarze';
+      if (btn && count > 0) btn.classList.add('has-comments');
+
+      renderCommentList(inner, placeId, url, rows);
+    } catch(err) {
+      inner.innerHTML = `<div class="comments-empty">Błąd ładowania: ${escHtml(err.message)}</div>${renderCommentInput(placeId, url)}`;
+    }
+  }
+
+  function renderCommentList(inner, placeId, url, rows) {
+    const isAdmin = sessionStorage.getItem('sld_role') === 'admin';
+    const myEmail = currentUser?.email || '';
+
+    const items = rows.map(r => {
+      const id          = r[0];
+      const text        = r[2] || '';
+      const authorEmail = r[3] || '';
+      const authorName  = r[4] || authorEmail.split('@')[0];
+      const date        = r[5] ? (typeof r[5] === 'object' ? r[5].toLocaleString?.('pl-PL',{dateStyle:'short',timeStyle:'short'}) : r[5]) : '';
+      const initials    = authorName.split(/[ @]/).filter(Boolean).map(w=>w[0]?.toUpperCase()||'').slice(0,2).join('');
+      const canDelete   = isAdmin || authorEmail === myEmail;
+
+      return `<div class="comment-item" id="cmti-${escAttr(id)}">
+        <div class="comment-avatar">${escHtml(initials||'?')}</div>
+        <div class="comment-body">
+          <div class="comment-meta">
+            <span class="comment-author">${escHtml(authorName)}</span>
+            <span class="comment-date">${escHtml(String(date))}</span>
+          </div>
+          <div class="comment-text">${escHtml(text)}</div>
+        </div>
+        ${canDelete ? `<button class="comment-del" onclick="deleteCommentItem('${escAttr(id)}','${escAttr(placeId)}','${escAttr(url)}')" title="Usuń komentarz">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        </button>` : ''}
+      </div>`;
+    }).join('');
+
+    const listHtml = rows.length
+      ? `<div class="comments-list">${items}</div>`
+      : `<div class="comments-empty">Brak komentarzy. Dodaj pierwszy poniżej.</div>`;
+
+    inner.innerHTML = listHtml + renderCommentInput(placeId, url);
+  }
+
+  function renderCommentInput(placeId, url) {
+    return `<div class="comment-add">
+      <textarea class="comment-input" id="cinput-${escAttr(placeId)}" placeholder="Dodaj komentarz… (np. linki zmienione w tekst, formularz nie działa)" rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitComment('${escAttr(placeId)}','${escAttr(url)}')}"></textarea>
+      <button class="btn btn-primary btn-sm" onclick="submitComment('${escAttr(placeId)}','${escAttr(url)}')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Wyślij
+      </button>
+    </div>`;
+  }
+
+  async function submitComment(placeId, url) {
+    const input = document.getElementById('cinput-' + placeId);
+    const text  = input?.value.trim();
+    if (!text) return;
+
+    input.disabled = true;
+    const data = await callAPI('addComment', { placeId, text }, 'POST');
+    input.disabled = false;
+
+    if (!data || data.error) { alert('Błąd: ' + (data?.error || 'Nieznany błąd')); return; }
+    input.value = '';
+    await loadComments(placeId, url);
+  }
+
+  async function deleteCommentItem(id, placeId, url) {
+    if (!confirm('Usunąć ten komentarz?')) return;
+    const data = await callAPI('deleteComment', { id }, 'POST');
+    if (!data || data.error) { alert('Błąd: ' + (data?.error || 'Nieznany błąd')); return; }
+    await loadComments(placeId, url);
   }
 
   /* ── FORM (ETAP 3) ────────────────────────────── */
