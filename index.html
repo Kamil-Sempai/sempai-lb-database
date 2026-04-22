@@ -1911,12 +1911,13 @@
 
   /* ── USER ROLE FROM SHEETS ────────────────────── */
   async function loadUserRole(email) {
-    const data = await callAPI('user', { email });
-    if (data && data.role) {
-      sessionStorage.setItem('sld_role', data.role);
-      return data.role;
-    }
-    // fallback to hardcoded list
+    try {
+      const data = await Promise.race([
+        callAPI('user', { email }),
+        new Promise((_,rej) => setTimeout(()=>rej('timeout'), 6000))
+      ]);
+      if (data && data.role) { sessionStorage.setItem('sld_role', data.role); return data.role; }
+    } catch(_) {}
     return ADMIN_EMAILS.includes(email) ? 'admin' : 'user';
   }
 
@@ -2308,7 +2309,7 @@
   function escAttr(s){return String(s==null?'':s).replace(/'/g,'&#39;').replace(/"/g,'&quot;')}
 
   /* ── LOADER ───────────────────────────────────── */
-  function hideLoader(){const l=document.getElementById('loader');l.classList.add('hidden');setTimeout(()=>l.remove(),400)}
+  function hideLoader(){const l=document.getElementById('loader');if(!l)return;l.classList.add('hidden');setTimeout(()=>{if(l.parentNode)l.remove()},400)}
 
   /* ── INIT ─────────────────────────────────────── */
   window.addEventListener('load',()=>{
