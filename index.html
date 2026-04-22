@@ -1040,7 +1040,7 @@
     if(e.key==='Enter'&&document.getElementById('new-folder-row').style.display!=='none'&&document.activeElement===document.getElementById('new-folder-input'))createNewFolder();
   });
 
-  function escHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+  function escHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
   /* ── AUTH ─────────────────────────────────────── */
   function signInWithGoogle(){
@@ -1259,7 +1259,12 @@
       return;
     }
 
-    renderPlacesTable(container, data);
+    try {
+      renderPlacesTable(container, data);
+    } catch(err) {
+      console.error('renderPlacesTable error:', err);
+      container.innerHTML = `<div class="table-wrap"><div class="table-state"><div class="table-state-icon">⚠️</div><div class="table-state-title">Błąd renderowania</div><div class="table-state-desc">${escHtml(err.message)}</div><button onclick="loadPlaces(1)" style="margin-top:16px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Spróbuj ponownie</button></div></div>`;
+    }
   }
 
   function renderPlacesTable(container, data) {
@@ -1755,7 +1760,7 @@
     }
   }
 
-  function escAttr(s) { return String(s||'').replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+  function escAttr(s){return String(s==null?'':s).replace(/'/g,'&#39;').replace(/"/g,'&quot;')}
 
   /* ── LOADER ───────────────────────────────────── */
   function hideLoader(){const l=document.getElementById('loader');l.classList.add('hidden');setTimeout(()=>l.remove(),400)}
