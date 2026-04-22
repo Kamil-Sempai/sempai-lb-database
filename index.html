@@ -138,12 +138,60 @@
     [data-theme="dark"] .sbd-loading     { color: #B8C3D8; }
 
     /* TABLE */
-    .filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+    .filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:0;flex-wrap:wrap}
     .filter-search{flex:1;min-width:180px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:13px;color:var(--text-1);outline:none;transition:border-color var(--t)}
     .filter-search:focus{border-color:var(--accent)}
     .filter-search::placeholder{color:var(--text-3)}
     .filter-select{padding:8px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:13px;color:var(--text-1);outline:none;cursor:pointer;transition:border-color var(--t)}
     .filter-select:focus{border-color:var(--accent)}
+
+    /* ── TYPE TABS ────────────────────────────────── */
+    .type-tabs{display:flex;align-items:center;gap:6px;margin:10px 0 14px;flex-wrap:wrap}
+    .type-tab{
+      display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
+      border-radius:var(--r-lg);font-size:13.5px;font-weight:600;cursor:pointer;
+      border:none;font-family:var(--font);transition:all var(--t);
+      white-space:nowrap;
+    }
+    .type-tab:hover{filter:brightness(1.1);transform:translateY(-1px)}
+    .type-tab.active{box-shadow:0 4px 14px rgba(0,0,0,0.18);transform:translateY(-1px)}
+    .type-tab-count{
+      font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;
+      background:rgba(0,0,0,0.15);
+    }
+    .type-tab-all{
+      padding:7px 14px;border-radius:99px;font-size:12px;font-weight:500;
+      cursor:pointer;border:1px solid var(--border);background:transparent;
+      font-family:var(--font);color:var(--text-3);transition:all var(--t);margin-left:4px;
+    }
+    .type-tab-all:hover{color:var(--text-1);border-color:var(--border-2)}
+    .type-tab-all.active{color:var(--text-1);border-color:var(--border-2);background:var(--bg-card)}
+
+    /* Type color definitions */
+    --c-ogloszenia-bg:   rgba(251,146,60,0.15);
+    --c-ogloszenia-text: #EA6C00;
+    --c-ogloszenia-bdr:  rgba(251,146,60,0.35);
+    --c-profile-bg:      rgba(139,92,246,0.15);
+    --c-profile-text:    #7C3AED;
+    --c-profile-bdr:     rgba(139,92,246,0.35);
+    --c-katalogi-bg:     rgba(16,185,129,0.15);
+    --c-katalogi-text:   #059669;
+    --c-katalogi-bdr:    rgba(16,185,129,0.35);
+    --c-social-bg:       rgba(59,123,255,0.15);
+    --c-social-text:     #2563EB;
+    --c-social-bdr:      rgba(59,123,255,0.35);
+
+    /* Colored type pills in table */
+    .type-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:600;border:1px solid;white-space:nowrap}
+    .type-pill-ogloszenia{background:rgba(251,146,60,0.12);color:#C2590A;border-color:rgba(251,146,60,0.3)}
+    .type-pill-profile{background:rgba(139,92,246,0.12);color:#6D28D9;border-color:rgba(139,92,246,0.3)}
+    .type-pill-katalogi{background:rgba(16,185,129,0.12);color:#047857;border-color:rgba(16,185,129,0.3)}
+    .type-pill-social{background:rgba(59,123,255,0.12);color:#1D4ED8;border-color:rgba(59,123,255,0.3)}
+    .type-pill-other{background:var(--bg-input);color:var(--text-2);border-color:var(--border)}
+    [data-theme="dark"] .type-pill-ogloszenia{color:#FB923C}
+    [data-theme="dark"] .type-pill-profile{color:#A78BFA}
+    [data-theme="dark"] .type-pill-katalogi{color:#34D399}
+    [data-theme="dark"] .type-pill-social{color:#60A5FA}
 
     .table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:background var(--t),border-color var(--t)}
     .table-scroll{overflow-x:auto}
@@ -659,12 +707,14 @@
           </div>
         </div>
 
-        <!-- Filter bar -->
-        <div class="filter-bar">
+        <!-- Type tabs -->
+        <div class="type-tabs" id="type-tabs">
+          <!-- populated by renderTypeTabs() -->
+        </div>
+
+        <!-- Filter bar (search + status only) -->
+        <div class="filter-bar" style="margin-bottom:14px">
           <input type="text" class="filter-search" id="filter-search" placeholder="Szukaj po URL lub nazwie…" oninput="debounceSearch()">
-          <select class="filter-select" id="filter-type" onchange="loadPlaces(1)">
-            <option value="">Wszystkie typy</option>
-          </select>
           <select class="filter-select" id="filter-status" onchange="loadPlaces(1)">
             <option value="">Wszystkie statusy</option>
             <option value="ok">Aktywne (OK)</option>
@@ -1314,12 +1364,14 @@
 
     // ── Fetch fresh data ──
     try {
+      console.log('[LB] Fetching Sheets directly...');
       updateLoaderStep(1, 'Połączono z Google Sheets');
       const [placeValues, verifValues, cfgValues] = await Promise.all([
         readSheet('baza_miejsc_lb!A:N'),
         readSheet('weryfikacja!A:I'),
         readSheet('konfiguracja!A:B')
       ]);
+      console.log('[LB] Got rows:', placeValues?.length);
 
       updateLoaderStep(2, 'Pobrano dane');
 
@@ -1328,36 +1380,39 @@
       const types     = parseTypes(cfgValues);
       const stats     = calcStats(placeRows, verifRows, types);
 
+      console.log('[LB] Parsed:', placeRows.length, 'places,', types);
       updateLoaderStep(3, 'Renderowanie tabeli…');
 
       saveCache({ types, places: placeRows, stats });
 
       allTypes     = types;
       allPlacesRaw = placeRows;
-      populateTypeFilter(types);
+      populateTypeFilter(types);  // renders tabs with counts
       renderStats(stats);
 
       const bw = document.getElementById('badge-wer');
       if (bw) { bw.textContent = stats.pending; bw.classList.toggle('hidden', !stats.pending); }
 
-      // Small delay so user sees step 3 flash before table appears
       await new Promise(r => setTimeout(r, 120));
       removeProgressLoader();
+      console.log('[LB] Rendering table...');
       renderFilteredPlaces();
+      console.log('[LB] Done!');
 
     } catch(err) {
-      console.error('Sheets API error:', err);
+      console.error('[LB] Error:', err);
       removeProgressLoader();
-      if (!cached?.places) {
-        if (container) container.innerHTML = `<div class="table-wrap"><div class="table-state">
-          <div class="table-state-icon">⚠️</div>
-          <div class="table-state-title">Błąd ładowania</div>
-          <div class="table-state-desc">${escHtml(err.message)}</div>
-          <button onclick="loadInitialData()" style="margin-top:16px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Spróbuj ponownie</button>
-        </div></div>`;
-        renderStatsPlaceholder(err.message);
-      } else {
-        // had cache, just remove refresh bar
+      // Always show error — with or without cache
+      if (container) container.innerHTML = `<div class="table-wrap"><div class="table-state">
+        <div class="table-state-icon">⚠️</div>
+        <div class="table-state-title">Błąd ładowania danych</div>
+        <div class="table-state-desc" style="max-width:360px;margin:0 auto">${escHtml(err.message)}<br><br>
+          <small style="opacity:0.7">Sprawdź konsolę (F12 → Console) po więcej szczegółów.</small>
+        </div>
+        <button onclick="signOut()" style="margin-top:12px;padding:7px 14px;background:transparent;color:var(--text-2);border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;font-family:var(--font)">Zaloguj się ponownie</button>
+        <button onclick="loadInitialData()" style="margin-top:8px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Spróbuj ponownie</button>
+      </div></div>`;
+      if (!cached?.places) renderStatsPlaceholder(err.message);
         const rb = document.querySelector('.refresh-bar');
         if (rb) rb.remove();
       }
@@ -1426,12 +1481,65 @@
     }, 80);
   }
 
+  /* ── TYPE COLORS & HELPERS ────────────────────── */
+  const TYPE_CONFIG = {
+    'Ogłoszenia':  { icon:'📢', cls:'type-pill-ogloszenia', tab:'#EA6C00', tabBg:'rgba(251,146,60,0.14)', tabBdr:'rgba(251,146,60,0.4)' },
+    'Profile':     { icon:'👤', cls:'type-pill-profile',    tab:'#7C3AED', tabBg:'rgba(139,92,246,0.14)', tabBdr:'rgba(139,92,246,0.4)' },
+    'Katalogi':    { icon:'📂', cls:'type-pill-katalogi',   tab:'#059669', tabBg:'rgba(16,185,129,0.14)', tabBdr:'rgba(16,185,129,0.4)' },
+    'Social Media':{ icon:'📱', cls:'type-pill-social',     tab:'#1D4ED8', tabBg:'rgba(59,123,255,0.14)', tabBdr:'rgba(59,123,255,0.4)' },
+  };
+
+  function typePillClass(type) {
+    const map = { 'Ogłoszenia':'type-pill-ogloszenia','Profile':'type-pill-profile','Katalogi':'type-pill-katalogi','Social Media':'type-pill-social' };
+    return 'type-pill ' + (map[type] || 'type-pill-other');
+  }
+  function typeIcon(type) { return TYPE_CONFIG[type]?.icon || '🔗'; }
+
+  let activeTypeTab = ''; // '' = all
+
+  function renderTypeTabs(types) {
+    const wrap = document.getElementById('type-tabs');
+    if (!wrap) return;
+    // Count per type
+    const counts = {};
+    allPlacesRaw.forEach(row => { if(row[3]) counts[row[3]] = (counts[row[3]]||0)+1; });
+
+    const tabs = types.map(t => {
+      const cfg   = TYPE_CONFIG[t] || { icon:'🔗', tab:'#6B7280', tabBg:'rgba(107,114,128,0.14)', tabBdr:'rgba(107,114,128,0.4)' };
+      const count = counts[t] || 0;
+      const active = activeTypeTab === t;
+      return `<button class="type-tab ${active?'active':''}" 
+        style="color:${cfg.tab};background:${active?cfg.tabBg:'transparent'};border:1.5px solid ${active?cfg.tabBdr:'transparent'}"
+        onmouseover="if(this.dataset.a!=='1')this.style.background='${cfg.tabBg}'"
+        onmouseout="if(this.dataset.a!=='1')this.style.background='transparent'"
+        data-a="${active?1:0}"
+        onclick="setTypeTab('${escAttr(t)}')">
+        ${cfg.icon} ${escHtml(t)}
+        <span class="type-tab-count">${count}</span>
+      </button>`;
+    }).join('');
+
+    const allActive = activeTypeTab === '';
+    wrap.innerHTML = tabs + `<button class="type-tab-all ${allActive?'active':''}" onclick="setTypeTab('')">Wszystkie typy</button>`;
+  }
+
+  function setTypeTab(type) {
+    activeTypeTab = type;
+    currentPage = 1;
+    renderTypeTabs(allTypes);
+    renderFilteredPlaces();
+  }
+
   function populateTypeFilter(types) {
+    // Legacy function — now also renders type tabs
+    renderTypeTabs(types);
+    // Keep hidden select for status filter logic compatibility
     const sel = document.getElementById('filter-type');
-    if (!sel) return;
-    const icons = {'Profile':'👤','Social Media':'📱','Ogłoszenia':'📢','Katalogi':'📂'};
-    sel.innerHTML = '<option value="">Wszystkie typy</option>' +
-      types.map(t => `<option value="${escHtml(t)}">${icons[t]||''} ${escHtml(t)}</option>`).join('');
+    if (sel) {
+      sel.innerHTML = '<option value="">Wszystkie typy</option>' +
+        types.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
+      sel.value = activeTypeTab;
+    }
   }
 
   /* ── CLIENT-SIDE FILTERING (instant, no API call) ── */
@@ -1440,7 +1548,7 @@
     if (!container) return;
 
     const search = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
-    const typeF  = document.getElementById('filter-type')?.value  || '';
+    const typeF  = activeTypeTab; // from tab click, not dropdown
     const statF  = document.getElementById('filter-status')?.value || '';
     const PAGE_SIZE = 30;
     const page = currentPage || 1;
@@ -1545,7 +1653,7 @@
 
   function renderPlacesTable(container, data) {
     if (!data.items || !data.items.length) {
-      const hasFilters = (document.getElementById('filter-search')?.value || document.getElementById('filter-type')?.value || document.getElementById('filter-status')?.value);
+      const hasFilters = (document.getElementById('filter-search')?.value || activeTypeTab || document.getElementById('filter-status')?.value);
       container.innerHTML = `<div class="table-wrap"><div class="table-state">
         <div class="table-state-icon">${hasFilters ? '🔍' : '📋'}</div>
         <div class="table-state-title">${hasFilters ? 'Brak wyników' : 'Baza jest pusta'}</div>
@@ -1574,7 +1682,7 @@
             </div>
           </div>
         </td>
-        <td><span class="type-pill">${escHtml(item.type || '—')}</span> ${accBtn}</td>
+        <td><span class="${typePillClass(item.type)}">${typeIcon(item.type)} ${escHtml(item.type || '—')}</span> ${accBtn}</td>
         <td>${badge}</td>
         <td class="td-num">${item.da || '—'}</td>
         <td class="td-num">${item.dr || '—'}</td>
@@ -1596,7 +1704,7 @@
               <th style="text-align:center">DA</th>
               <th style="text-align:center">DR</th>
               <th style="text-align:center">DoF.</th>
-              <th>Sprawdzono</th>
+              <th>Dodano</th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -1645,10 +1753,12 @@
   }
 
   function clearFilters() {
-    const s = document.getElementById('filter-search');   if (s) s.value = '';
-    const t = document.getElementById('filter-type');     if (t) t.value = '';
-    const f = document.getElementById('filter-status');   if (f) f.value = '';
-    loadPlaces(1);
+    activeTypeTab = '';
+    currentPage   = 1;
+    const s = document.getElementById('filter-search'); if (s) s.value = '';
+    const f = document.getElementById('filter-status'); if (f) f.value = '';
+    renderTypeTabs(allTypes);
+    renderFilteredPlaces();
   }
 
   function debounceSearch() {
