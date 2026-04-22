@@ -854,6 +854,13 @@
   /* ── USER MENU ────────────────────────────────── */
   function toggleUserMenu(){document.getElementById('user-menu-wrap').classList.toggle('open')}
   function closeUserMenu(){document.getElementById('user-menu-wrap').classList.remove('open')}
+  function openModal(id){
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.classList.add('show');
+    el.onclick=e=>{ if(e.target===el) el.classList.remove('show'); };
+  }
+  function closeModal(id){const el=document.getElementById(id);if(el)el.classList.remove('show')}
   document.addEventListener('click',e=>{
     const w=document.getElementById('user-menu-wrap');
     if(w&&!w.contains(e.target))closeUserMenu();
