@@ -766,10 +766,9 @@
     <div class="accounts-add-form">
       <div class="accounts-add-title">Dodaj nowe konto</div>
       <div class="accounts-add-grid">
-        <input class="acc-input" id="acc-platforma" placeholder="Platforma (np. Facebook)">
         <input class="acc-input" id="acc-login" placeholder="Login / E-mail">
         <input class="acc-input" id="acc-haslo" placeholder="Hasło" type="password">
-        <input class="acc-input" id="acc-notatki" placeholder="Notatki (opcjonalnie)">
+        <input class="acc-input" id="acc-notatki" placeholder="Notatki (opcjonalnie)" style="grid-column:1/-1">
       </div>
       <button class="btn btn-primary btn-sm" onclick="submitSocialAccount()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1726,7 +1725,6 @@
     }
     list.innerHTML = data.accounts.map(acc => `
       <div class="account-item" id="acc-item-${escAttr(acc.id)}">
-        <span class="account-platform">${escHtml(acc.platforma)}</span>
         <span class="account-login">${escHtml(acc.login||'—')}</span>
         <span class="account-pass" onclick="togglePass(this,'${escAttr(acc.haslo||'')}')" title="Kliknij by pokazać/ukryć">••••••</span>
         ${acc.notatki ? `<span style="font-size:11px;color:var(--text-3)">${escHtml(acc.notatki)}</span>` : ''}
@@ -1741,16 +1739,15 @@
   }
 
   async function submitSocialAccount() {
-    const platforma = document.getElementById('acc-platforma')?.value.trim();
     const login     = document.getElementById('acc-login')?.value.trim();
     const haslo     = document.getElementById('acc-haslo')?.value;
     const notatki   = document.getElementById('acc-notatki')?.value.trim();
-    if (!platforma) { alert('Podaj nazwę platformy.'); return; }
+    if (!login) { alert('Podaj login lub e-mail konta.'); return; }
     const data = await callAPI('addSocialAccount', {
-      placeId: currentAccountsPlaceId, platforma, login, haslo, notatki
+      placeId: currentAccountsPlaceId, login, haslo, notatki
     }, 'POST');
     if (data?.error) { alert('Błąd: ' + data.error); return; }
-    ['acc-platforma','acc-login','acc-haslo','acc-notatki'].forEach(id => {
+    ['acc-login','acc-haslo','acc-notatki'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     await refreshAccountsList();
