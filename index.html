@@ -115,21 +115,21 @@
     /* STATS */
     .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
     .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;transition:background var(--t),border-color var(--t)}
-    .stat-card-label{font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .stat-card-label{font-size:11px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
     .stat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
     .stat-val{font-size:30px;font-weight:700;color:var(--text-1);letter-spacing:-1.5px;line-height:1}
-    .stat-hint{font-size:11.5px;color:var(--text-2);margin-top:5px}
+    .stat-hint{font-size:11.5px;color:#374151;margin-top:5px}
     .stat-breakdown{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:5px}
     .sbd-row{display:flex;align-items:center;justify-content:space-between}
-    .sbd-label{font-size:11.5px;color:var(--text-2)} .sbd-val{font-size:11.5px;font-weight:600;color:var(--text-1)}
-    .sbd-loading{font-size:11px;color:var(--text-2);font-style:italic}
+    .sbd-label{font-size:11.5px;color:#374151} .sbd-val{font-size:11.5px;font-weight:600;color:var(--text-1)}
+    .sbd-loading{font-size:11px;color:#374151;font-style:italic}
 
     /* DARK MODE — stat card text lighter */
-    [data-theme="dark"] .stat-card-label { color: #C5CEDF; }
-    [data-theme="dark"] .stat-hint       { color: #B8C3D8; }
-    [data-theme="dark"] .sbd-label       { color: #B8C3D8; }
-    [data-theme="dark"] .sbd-val         { color: #D4DCF0; }
-    [data-theme="dark"] .sbd-loading     { color: #B8C3D8; }
+    [data-theme="dark"] .stat-card-label { color: #E2E8F8; }
+    [data-theme="dark"] .stat-hint       { color: #CBD5EC; }
+    [data-theme="dark"] .sbd-label       { color: #CBD5EC; }
+    [data-theme="dark"] .sbd-val         { color: #EEF2FF; }
+    [data-theme="dark"] .sbd-loading     { color: #CBD5EC; }
 
     /* TABLE */
     .filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:0;flex-wrap:wrap}
@@ -142,13 +142,13 @@
     /* ── TYPE TABS ────────────────────────────────── */
     .type-tabs{display:flex;align-items:center;gap:6px;margin:10px 0 14px;flex-wrap:wrap}
     .type-tab{
-      display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
-      border-radius:var(--r-lg);font-size:13.5px;font-weight:600;cursor:pointer;
-      border:none;font-family:var(--font);transition:all var(--t);
+      display:inline-flex;align-items:center;gap:7px;padding:7px 15px;
+      border-radius:99px;font-size:13px;font-weight:600;cursor:pointer;
+      border:1.5px solid transparent;font-family:var(--font);transition:all var(--t);
       white-space:nowrap;
     }
-    .type-tab:hover{filter:brightness(1.1);transform:translateY(-1px)}
-    .type-tab.active{box-shadow:0 4px 14px rgba(0,0,0,0.18);transform:translateY(-1px)}
+    .type-tab:hover{filter:brightness(1.08);transform:translateY(-1px)}
+    .type-tab.active{box-shadow:0 4px 14px rgba(0,0,0,0.15);transform:translateY(-1px)}
     .type-tab-count{
       font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;
       background:rgba(0,0,0,0.15);
@@ -524,10 +524,10 @@
     .dl-step{display:flex;align-items:center;gap:11px;font-size:13px;color:rgba(255,255,255,0.25);transition:all 0.3s ease}
     .dl-step.active{color:rgba(255,255,255,0.9)}
     .dl-step.done{color:rgba(16,185,129,0.8)}
-    .dl-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,0.1);font-size:11px;transition:all 0.3s ease}
-    .dl-step.active .dl-dot{border-color:var(--accent);background:rgba(59,123,255,0.2);animation:dlPulse 1.2s ease-in-out infinite}
+    .dl-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,0.1);font-size:11px;transition:all 0.3s ease;position:relative;overflow:visible}
+    .dl-step.active .dl-dot{border-color:transparent;background:transparent}.dl-step.active .dl-dot::before{content:"";position:absolute;inset:-1.5px;border-radius:50%;border:1.5px solid transparent;border-top-color:var(--accent);border-right-color:rgba(59,123,255,0.5);animation:dlSpin 0.75s linear infinite}.dl-step.active .dl-dot::after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;background:var(--accent);opacity:0.9}
     .dl-step.done .dl-dot{border-color:rgba(16,185,129,0.6);background:rgba(16,185,129,0.12);color:rgba(16,185,129,0.9)}
-    @keyframes dlPulse{0%,100%{box-shadow:0 0 0 0 rgba(59,123,255,0.35)}50%{box-shadow:0 0 0 5px rgba(59,123,255,0)}}
+    @keyframes dlSpin{to{transform:rotate(360deg)}}@keyframes dlPulse{0%,100%{box-shadow:0 0 0 0 rgba(59,123,255,0.35)}50%{box-shadow:0 0 0 5px rgba(59,123,255,0)}}
     .dl-bar{height:2px;background:rgba(255,255,255,0.07);border-radius:99px;margin-top:20px;overflow:hidden}
     .dl-fill{height:100%;background:linear-gradient(90deg,var(--accent),#7C3AED);width:0%;transition:width 0.6s ease;border-radius:99px}
 
@@ -1650,8 +1650,8 @@
       const count = counts[t] || 0;
       const active = activeTypeTab === t;
       return `<button class="type-tab ${active?'active':''}" 
-        style="color:${cfg.tab};background:${active?cfg.tabBg:'transparent'};border:1.5px solid ${active?cfg.tabBdr:'transparent'}"
-        onmouseover="if(this.dataset.a!=='1')this.style.background='${cfg.tabBg}'"
+        style="color:${cfg.tab};background:${active?cfg.tabBg:'transparent'};border-color:${active?cfg.tabBdr:cfg.tabBdr.replace('0.4)','0.2)')}"
+        onmouseover="this.style.background='${cfg.tabBg}'"
         onmouseout="if(this.dataset.a!=='1')this.style.background='transparent'"
         data-a="${active?1:0}"
         onclick="setTypeTab('${escAttr(t)}')">
