@@ -1204,9 +1204,8 @@
     refreshFolderDisplay();
     hideLoader();
 
-    // Defer by 2 frames — ensures browser processes display:flex on #app
-    // before we manipulate places-container innerHTML
-    requestAnimationFrame(() => requestAnimationFrame(() => loadInitialData()));
+    // Defer by 100ms — gives browser time to paint the app layout before we manipulate DOM
+    setTimeout(loadInitialData, 100);
 
     loadUserRole(user.email).then(role => {
       sessionStorage.setItem('sld_role', role);
@@ -1342,54 +1341,47 @@
 
   /* ── INITIAL LOAD: stale-while-revalidate ────────── */
   async function loadInitialData() {
-    const container = document.getElementById('places-container');
+    const getContainer = () => document.getElementById('places-container');
 
-    // ── Step 1: show cached data INSTANTLY if available ──
+    // Helper: render into DOM on next tick (forces browser to repaint)
+    function renderSoon(fn) { setTimeout(fn, 0); }
+
+    // ── 1. Cached data → show instantly ──────────────────
     const cached = getCached();
-    if (cached?.types) { allTypes = cached.types; populateTypeFilter(cached.types); }
-    if (cached?.places) {
+    if (cached?.places && cached.types) {
+      allTypes     = cached.types;
       allPlacesRaw = cached.places;
-      renderFilteredPlaces();
-      if (cached?.stats) renderStats(cached.stats);
+      populateTypeFilter(cached.types);
+      if (cached.stats) renderStats(cached.stats);
+      renderSoon(() => {
+        const c = getContainer(); if (c) c.innerHTML = '';
+        renderFilteredPlaces();
+      });
       const bw = document.getElementById('badge-wer');
       if (bw && cached.stats?.pending != null) { bw.textContent = cached.stats.pending; bw.classList.toggle('hidden', !cached.stats.pending); }
-      if (!isStale(cached)) return; // fresh cache — done
-      // stale — show subtle refresh bar at top of table
-      if (container) {
-        const tw = container.querySelector('.table-wrap');
-        if (tw && !tw.querySelector('.refresh-bar')) {
-          const bar = document.createElement('div');
-          bar.className = 'refresh-bar';
-          bar.innerHTML = `<div class="refresh-bar-fill" id="refresh-fill"></div>`;
-          tw.prepend(bar);
-          animateRefreshBar();
-        }
-      }
-    } else {
-      // ── No cache: show step-by-step progress loader ──
-      if (container) showProgressLoader(container);
+      if (!isStale(cached)) return; // fresh cache — nothing more to do
     }
 
-    // ── Fetch fresh data ──
+    // ── 2. Show spinner while fetching ───────────────────
+    renderSoon(() => {
+      const c = getContainer();
+      if (c && !allPlacesRaw.length) {
+        c.innerHTML = `<div class="table-wrap"><div class="table-state"><div class="table-spinner"></div><div class="table-state-title">Pobieranie danych…</div></div></div>`;
+      }
+    });
+
+    // ── 3. Fetch from Sheets API ──────────────────────────
     try {
-      console.log('[LB] Fetching Sheets directly...');
-      updateLoaderStep(1, 'Połączono z Google Sheets');
       const [placeValues, verifValues, cfgValues] = await Promise.all([
         readSheet('baza_miejsc_lb!A:N'),
         readSheet('weryfikacja!A:I'),
         readSheet('konfiguracja!A:B')
       ]);
-      console.log('[LB] Got rows:', placeValues?.length);
-
-      updateLoaderStep(2, 'Pobrano dane');
 
       const placeRows = placeValues.slice(1).filter(r=>r[1]);
       const verifRows = verifValues.slice(1).filter(r=>r[0]);
       const types     = parseTypes(cfgValues);
       const stats     = calcStats(placeRows, verifRows, types);
-
-      console.log('[LB] Parsed:', placeRows.length, 'places,', types);
-      updateLoaderStep(3, 'Renderowanie tabeli…');
 
       saveCache({ types, places: placeRows, stats });
 
@@ -1401,28 +1393,27 @@
       const bw = document.getElementById('badge-wer');
       if (bw) { bw.textContent = stats.pending; bw.classList.toggle('hidden', !stats.pending); }
 
-      console.log('[LB] Rendering table...');
-      // Explicitly clear the progress loader before rendering table
-      if (container) container.innerHTML = '';
-      renderFilteredPlaces();
-      console.log('[LB] Done!');
+      // ── 4. Render table on next tick ──────────────────
+      renderSoon(() => {
+        const c = getContainer();
+        if (c) c.innerHTML = '';
+        renderFilteredPlaces();
+      });
 
     } catch(err) {
       console.error('[LB] Error:', err);
-      removeProgressLoader();
-      // Always show error — with or without cache
-      if (container) container.innerHTML = `<div class="table-wrap"><div class="table-state">
-        <div class="table-state-icon">⚠️</div>
-        <div class="table-state-title">Błąd ładowania danych</div>
-        <div class="table-state-desc" style="max-width:360px;margin:0 auto">${escHtml(err.message)}<br><br>
-          <small style="opacity:0.7">Sprawdź konsolę (F12 → Console) po więcej szczegółów.</small>
-        </div>
-        <button onclick="signOut()" style="margin-top:12px;padding:7px 14px;background:transparent;color:var(--text-2);border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;font-family:var(--font)">Zaloguj się ponownie</button>
-        <button onclick="loadInitialData()" style="margin-top:8px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Spróbuj ponownie</button>
-      </div></div>`;
-      if (!cached?.places) renderStatsPlaceholder(err.message);
-      const rb = document.querySelector('.refresh-bar');
-      if (rb) rb.remove();
+      renderSoon(() => {
+        const c = getContainer();
+        if (c && !allPlacesRaw.length) {
+          c.innerHTML = `<div class="table-wrap"><div class="table-state">
+            <div class="table-state-icon">⚠️</div>
+            <div class="table-state-title">Błąd ładowania</div>
+            <div class="table-state-desc">${escHtml(err.message)}</div>
+            <button onclick="loadInitialData()" style="margin-top:14px;padding:8px 18px;background:var(--accent);color:#FFF;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Spróbuj ponownie</button>
+          </div></div>`;
+          renderStatsPlaceholder(err.message);
+        }
+      });
     }
   }
 
