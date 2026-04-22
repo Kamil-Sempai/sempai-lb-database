@@ -1208,8 +1208,17 @@
     refreshFolderDisplay();
     hideLoader();
 
-    // Load all data via direct Sheets API (fast) + stale-while-revalidate cache
+    // Load all data via direct Sheets API + stale-while-revalidate cache
     loadInitialData();
+    // Auto-retry after 3s if table still shows spinner (handles token propagation delay)
+    setTimeout(() => {
+      const cont = document.getElementById('places-container');
+      const stillLoading = cont && (cont.querySelector('.table-spinner') || cont.querySelector('.progress-loader'));
+      if (stillLoading && !allPlacesRaw.length) {
+        console.log('[LB] Auto-retry after 3s...');
+        loadInitialData();
+      }
+    }, 3000);
     loadUserRole(user.email).then(role => {
       sessionStorage.setItem('sld_role', role);
       applyRole(role);
@@ -1278,12 +1287,22 @@
   /* Bezpośredni odczyt z Google Sheets API v4 */
   async function readSheet(range) {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
-    const r = await fetch(url, {
-      headers: { Authorization: 'Bearer ' + currentUser.access_token }
-    });
-    const data = await r.json();
-    if (data.error) throw new Error(data.error.message || 'Sheets API error');
-    return data.values || [];
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const r = await fetch(url, {
+        headers: { Authorization: 'Bearer ' + currentUser.access_token },
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      const data = await r.json();
+      if (data.error) throw new Error(data.error.message || 'Sheets API error ' + r.status);
+      return data.values || [];
+    } catch(e) {
+      clearTimeout(timeout);
+      if (e.name === 'AbortError') throw new Error('Sheets API nie odpowiada (timeout 15s)');
+      throw e;
+    }
   }
 
   /* Cache helpers */
@@ -1387,15 +1406,15 @@
 
       allTypes     = types;
       allPlacesRaw = placeRows;
-      populateTypeFilter(types);  // renders tabs with counts
+      populateTypeFilter(types);
       renderStats(stats);
 
       const bw = document.getElementById('badge-wer');
       if (bw) { bw.textContent = stats.pending; bw.classList.toggle('hidden', !stats.pending); }
 
-      await new Promise(r => setTimeout(r, 120));
-      removeProgressLoader();
       console.log('[LB] Rendering table...');
+      // Explicitly clear the progress loader before rendering table
+      if (container) container.innerHTML = '';
       renderFilteredPlaces();
       console.log('[LB] Done!');
 
