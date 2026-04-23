@@ -189,12 +189,19 @@
 
     .table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:background var(--t),border-color var(--t)}
     .table-scroll{overflow-x:auto}
-    table.data-table{width:100%;border-collapse:collapse;font-size:13px}
-    table.data-table thead{background:var(--bg-input);width:100%}
-    table.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);border-bottom:1px solid var(--border);background:transparent;white-space:nowrap}
-    table.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text-1);vertical-align:middle}
+    table.data-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+    table.data-table thead{background:var(--bg-input)}
+    table.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);border-bottom:1px solid var(--border);background:transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    table.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text-1);vertical-align:middle;overflow:hidden}
     table.data-table tr:last-child td{border-bottom:none}
     table.data-table tr:hover td{background:var(--bg-input)}
+    .col-cb{width:40px}
+    .col-url{width:auto}
+    .col-type{width:200px}
+    .col-status{width:140px}
+    .col-num{width:70px}
+    .col-date{width:120px}
+    .col-actions{width:220px}
     .td-url{max-width:280px}
     .td-url a{color:var(--text-2);font-size:11.5px;text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
     .td-url a:hover{text-decoration:underline;color:var(--accent)}
@@ -2095,9 +2102,6 @@
     }
 
     const isAdminUser = sessionStorage.getItem('sld_role')==='admin' && viewMode==='admin';
-    // Show/hide checkbox column header
-    const thCb = document.getElementById('th-cb');
-    if (thCb) thCb.style.display = isAdminUser ? '' : 'none';
 
     const rows = data.items.map(item => {
       const badge   = statusBadge(item.code, item.status);
@@ -2167,8 +2171,19 @@
       <div class="table-wrap">
         <div class="table-scroll">
           <table class="data-table">
+            <colgroup>
+              <col id="col-cb" class="col-cb" style="${isAdminUser?'':'display:none'}">
+              <col class="col-url">
+              <col class="col-type">
+              <col class="col-status">
+              <col class="col-num">
+              <col class="col-num">
+              <col class="col-num">
+              <col class="col-date">
+              <col class="col-actions">
+            </colgroup>
             <thead><tr>
-              <th class="th-cb" id="th-cb" style="display:none">
+              <th class="th-cb" id="th-cb" style="${isAdminUser?'':'display:none'}">
                 <div class="row-cb" id="th-cb-box" onclick="toggleSelectAllPlaces()" title="Zaznacz wszystkie"></div>
               </th>
               <th>URL / Nazwa</th>
