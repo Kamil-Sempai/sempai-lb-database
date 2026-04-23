@@ -189,11 +189,13 @@
 
     .table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:background var(--t),border-color var(--t)}
     .table-scroll{overflow-x:auto;width:100%}
-    table.data-table{width:100%;min-width:100%;border-collapse:collapse;font-size:13px;table-layout:auto}
+    table.data-table{width:100%;border-collapse:collapse;font-size:13px}
     table.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);border-bottom:1px solid var(--border);background:var(--bg-input);white-space:nowrap}
     table.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text-1);vertical-align:middle}
     table.data-table tr:last-child td{border-bottom:none}
     table.data-table tr:hover td{background:var(--bg-input)}
+    table.data-table thead tr th:last-child{width:100%}
+    table.data-table tbody tr td:last-child{white-space:nowrap}
     .td-url{max-width:280px}
     .td-url a{color:var(--text-2);font-size:11.5px;text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
     .td-url a:hover{text-decoration:underline;color:var(--accent)}
