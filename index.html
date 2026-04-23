@@ -426,6 +426,37 @@
     .del-action-count{font-size:13px;font-weight:600;color:#FCA5A5}
     .del-action-count span{color:#F87171}
 
+    /* ── ADMIN PANEL ────────────────────────────── */
+    .admin-tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--bg-input);border-radius:var(--r);padding:3px;width:fit-content}
+    .admin-tab{padding:7px 18px;border:none;border-radius:7px;background:transparent;font-family:var(--font);font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;transition:all var(--t)}
+    .admin-tab.active{background:var(--bg-card);color:var(--text-1);box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+    .admin-section{display:none}.admin-section.active{display:block}
+
+    /* Users table */
+    .users-table{width:100%;border-collapse:collapse}
+    .users-table th{padding:9px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);border-bottom:1px solid var(--border);text-align:left;background:var(--bg-input)}
+    .users-table td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-1);vertical-align:middle}
+    .users-table tr:last-child td{border-bottom:none}
+    .users-table tr:hover td{background:rgba(59,123,255,0.03)}
+    .role-select{padding:5px 9px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg-input);font-family:var(--font);font-size:12.5px;color:var(--text-1);cursor:pointer;outline:none;transition:border-color var(--t)}
+    .role-select:focus{border-color:var(--accent)}
+    .role-pill-admin{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;background:rgba(239,68,68,0.1);color:var(--danger);border:1px solid rgba(239,68,68,0.2)}
+    .role-pill-weryfikator{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.1);color:#D97706;border:1px solid rgba(245,158,11,0.2)}
+    .role-pill-user{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;background:var(--bg-input);color:var(--text-3);border:1px solid var(--border)}
+
+    /* Tags editor (types, categories) */
+    .tags-editor{display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--r-lg);min-height:52px;align-items:center}
+    .tag-item{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:99px;font-size:13px;color:var(--text-1)}
+    .tag-del{width:16px;height:16px;border:none;background:transparent;cursor:pointer;color:var(--text-3);display:flex;align-items:center;justify-content:center;border-radius:50%;padding:0;line-height:1;font-size:14px;transition:all var(--t)}
+    .tag-del:hover{background:rgba(239,68,68,0.15);color:var(--danger)}
+    .tag-add-row{display:flex;gap:8px;margin-top:10px}
+
+    /* Settings */
+    .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+    .settings-row:last-child{border-bottom:none}
+    .settings-label{font-size:13.5px;font-weight:600;color:var(--text-1)}
+    .settings-desc{font-size:12px;color:var(--text-3);margin-top:2px}
+
     /* ── COMMENTS ───────────────────────────────── */
     .comment-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);color:#818CF8;cursor:pointer;transition:all var(--t);white-space:nowrap;font-family:var(--font)}
     .comment-btn:hover{background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.4);color:#A5B4FC}
@@ -1037,10 +1068,98 @@
       </div>
 
       <!-- ADMIN -->
-      <div class="page" id="page-admin"><div class="empty-card"><div class="empty-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3B7BFF" stroke-width="1.6"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div><div class="empty-title">Panel administratora</div><div class="empty-desc">Zarządzanie typami miejsc, powiadomieniami e-mail, harmonogramem sprawdzania domen i migracją danych.</div><span class="soon-badge">Etap 6 — wkrótce</span></div></div>
+      <!-- PANEL ADMINA -->
+      <div class="page" id="page-admin">
+
+        <div class="admin-tabs">
+          <button class="admin-tab active" id="atab-users"   onclick="showAdminTab('users')">👥 Użytkownicy</button>
+          <button class="admin-tab"         id="atab-types"  onclick="showAdminTab('types')">🏷️ Typy i kategorie</button>
+          <button class="admin-tab"         id="atab-settings" onclick="showAdminTab('settings')">⚙️ Ustawienia</button>
+        </div>
+
+        <!-- USERS -->
+        <div class="admin-section active" id="asec-users">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div>
+              <div style="font-size:15px;font-weight:600;color:var(--text-1)">Użytkownicy</div>
+              <div style="font-size:12px;color:var(--text-3);margin-top:2px">Wszyscy użytkownicy którzy zalogowali się do narzędzia</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Dodaj e-mail z wyprzedzeniem
+            </button>
+          </div>
+          <div class="table-wrap">
+            <div id="admin-users-container">
+              <div class="verif-empty"><div class="verif-empty-icon">⏳</div>Ładowanie…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TYPES & CATEGORIES -->
+        <div class="admin-section" id="asec-types">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+            <div class="form-card">
+              <div class="form-section-title">Typy miejscówek</div>
+              <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">Typy pojawiają się w formularzu dodawania i jako zakładki filtrowania.</div>
+              <div class="tags-editor" id="types-editor"></div>
+              <div class="tag-add-row">
+                <input class="field-input" id="new-type-input" placeholder="Nowy typ…" style="flex:1" onkeydown="if(event.key==='Enter')addType()">
+                <button class="btn btn-primary btn-sm" onclick="addType()">Dodaj</button>
+              </div>
+            </div>
+            <div class="form-card">
+              <div class="form-section-title">Kategorie tematyczne</div>
+              <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">Kategorie pojawiają się w formularzu dla typu Profile.</div>
+              <div class="tags-editor" id="categories-editor"></div>
+              <div class="tag-add-row">
+                <input class="field-input" id="new-cat-input" placeholder="Nowa kategoria…" style="flex:1" onkeydown="if(event.key==='Enter')addCategory()">
+                <button class="btn btn-primary btn-sm" onclick="addCategory()">Dodaj</button>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" onclick="saveTypesAndCategories()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Zapisz zmiany
+            </button>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="admin-section" id="asec-settings">
+          <div class="form-card">
+            <div class="form-section-title">Ustawienia narzędzia</div>
+            <div class="settings-row">
+              <div><div class="settings-label">Dozwolona domena</div><div class="settings-desc">Tylko użytkownicy @ta-domena.pl będą mogli się zalogować.</div></div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:13px;color:var(--text-3)">@</span>
+                <input class="field-input" id="setting-domain" placeholder="sempai.pl" style="width:180px">
+                <button class="btn btn-primary btn-sm" onclick="saveSetting('domain')">Zapisz</button>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div><div class="settings-label">Administratorzy (e-maile)</div><div class="settings-desc">Adresy e-mail z automatyczną rolą admina. Jeden na linię.</div></div>
+              <div>
+                <textarea class="field-textarea" id="setting-admins" rows="3" style="width:280px;min-height:72px"></textarea>
+                <button class="btn btn-primary btn-sm" onclick="saveSetting('admins')" style="margin-top:6px;float:right">Zapisz</button>
+              </div>
+            </div>
+            <div class="settings-row" style="border-bottom:none">
+              <div><div class="settings-label">ID arkusza Google Sheets</div><div class="settings-desc">Aktualnie skonfigurowany arkusz z danymi.</div></div>
+              <div style="font-size:12px;color:var(--text-3);font-family:monospace;word-break:break-all;max-width:300px;text-align:right" id="setting-sheet-id">—</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- USERS page -->
+      <div class="page" id="page-users">
+        <div id="page-users-redirect"></div>
+      </div>
 
       <!-- USERS -->
-      <div class="page" id="page-users"><div class="empty-card"><div class="empty-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3B7BFF" stroke-width="1.6"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div><div class="empty-title">Zarządzanie użytkownikami</div><div class="empty-desc">Lista wszystkich użytkowników, przydzielanie ról i dodawanie adresów @sempai.pl z wyprzedzeniem.</div><span class="soon-badge">Etap 6 — wkrótce</span></div></div>
 
       <!-- MONITORING -->
       <div class="page" id="page-monitoring">
@@ -1219,6 +1338,8 @@
     if(name==='dodaj') initForm();
     if(name==='weryfikacja') loadVerification();
     if(name==='monitoring') renderMonitoring();
+    if(name==='admin') { loadAdminUsers(); loadAdminTypesCategories(); loadAdminSettings(); }
+    if(name==='users') { showPage('admin', document.getElementById('nav-admin')); showAdminTab('users'); }
   }
 
   /* ── VIEW MODE TOGGLE (admin only) ───────────── */
@@ -2515,6 +2636,223 @@
   function getCommentBtnClass(placeId) {
     const n = commentCounts[String(placeId)] || 0;
     return n > 0 ? 'comment-btn has-comments' : 'comment-btn';
+  }
+
+  /* ── ADMIN PANEL ──────────────────────────────── */
+  let adminUsers = [];
+  let adminTypes = [];
+  let adminCategories = [];
+
+  function showAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('atab-'+tab)?.classList.add('active');
+    document.getElementById('asec-'+tab)?.classList.add('active');
+    if (tab === 'users')    loadAdminUsers();
+    if (tab === 'types')    loadAdminTypesCategories();
+    if (tab === 'settings') loadAdminSettings();
+  }
+
+  /* ── USERS ───────────────────────────────────── */
+  async function loadAdminUsers() {
+    const container = document.getElementById('admin-users-container');
+    if (!container) return;
+    container.innerHTML = '<div class="verif-empty"><div class="verif-empty-icon">⏳</div>Ładowanie…</div>';
+    const data = await callAPI('users');
+    if (!data || data.error) { container.innerHTML = `<div class="verif-empty"><div class="verif-empty-icon">⚠️</div>${escHtml(data?.error||'Błąd')}</div>`; return; }
+    adminUsers = data.users || [];
+    renderAdminUsers();
+  }
+
+  function renderAdminUsers() {
+    const container = document.getElementById('admin-users-container');
+    if (!container) return;
+    if (!adminUsers.length) { container.innerHTML = '<div class="verif-empty"><div class="verif-empty-icon">👥</div>Brak użytkowników.</div>'; return; }
+    container.innerHTML = `<table class="users-table">
+      <thead><tr>
+        <th>Użytkownik</th>
+        <th>Rola</th>
+        <th>Pierwsze logowanie</th>
+        <th>Ostatnie logowanie</th>
+        <th></th>
+      </tr></thead>
+      <tbody>${adminUsers.map(u => `
+        <tr id="urow-${escAttr(u.email)}">
+          <td>
+            <div style="font-weight:600;color:var(--text-1)">${escHtml(u.name||'—')}</div>
+            <div style="font-size:11.5px;color:var(--text-3)">${escHtml(u.email)}</div>
+          </td>
+          <td>
+            <select class="role-select" onchange="changeUserRole('${escAttr(u.email)}',this.value)">
+              <option value="user"        ${u.role==='user'       ?'selected':''}>Specjalista SEO</option>
+              <option value="weryfikator" ${u.role==='weryfikator'?'selected':''}>Weryfikator</option>
+              <option value="admin"       ${u.role==='admin'      ?'selected':''}>Administrator</option>
+            </select>
+          </td>
+          <td style="font-size:12px;color:var(--text-3)">${escHtml(u.firstLogin||'—')}</td>
+          <td style="font-size:12px;color:var(--text-3)">${escHtml(u.lastLogin||'—')}</td>
+          <td>
+            <button class="row-action-btn del" onclick="deleteUser('${escAttr(u.email)}')" title="Usuń użytkownika">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+            </button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  async function changeUserRole(email, role) {
+    const data = await callAPI('setUserRole', { email, role }, 'POST');
+    if (data?.error) { alert('Błąd: ' + data.error); loadAdminUsers(); return; }
+    showToast(`✅ Rola ${escHtml(email)} zmieniona na ${role}`, 'success');
+    const u = adminUsers.find(x => x.email === email);
+    if (u) u.role = role;
+  }
+
+  async function deleteUser(email) {
+    if (!confirm(`Usunąć użytkownika ${email}?\nUtraci dostęp i jego dane zostaną usunięte z arkusza.`)) return;
+    const data = await callAPI('deleteUser', { email }, 'POST');
+    if (data?.error) { alert('Błąd: ' + data.error); return; }
+    adminUsers = adminUsers.filter(u => u.email !== email);
+    renderAdminUsers();
+    showToast('✅ Użytkownik usunięty', 'success');
+  }
+
+  function openAddUserModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay show';
+    modal.id = 'add-user-modal';
+    modal.innerHTML = `<div class="modal-box" style="max-width:420px">
+      <div class="modal-head">
+        <div class="modal-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B7BFF" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+        <h2 class="modal-title">Dodaj użytkownika z wyprzedzeniem</h2>
+        <p class="modal-sub">Użytkownik będzie mógł się zalogować i od razu otrzyma wybraną rolę.</p>
+      </div>
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field-label">Adres e-mail <span>*</span></div>
+          <input class="field-input" id="add-user-email" type="email" placeholder="imie.nazwisko@sempai.pl">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Rola</div>
+          <select class="field-select-native" id="add-user-role">
+            <option value="user">Specjalista SEO</option>
+            <option value="weryfikator">Weryfikator</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('add-user-modal').remove()">Anuluj</button>
+        <button class="btn btn-primary btn-sm" onclick="submitAddUser()">Dodaj użytkownika</button>
+      </div>
+    </div>`;
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+    setTimeout(() => document.getElementById('add-user-email')?.focus(), 100);
+  }
+
+  async function submitAddUser() {
+    const email = document.getElementById('add-user-email')?.value.trim();
+    const role  = document.getElementById('add-user-role')?.value || 'user';
+    if (!email || !email.includes('@')) { alert('Podaj poprawny adres e-mail.'); return; }
+    const data = await callAPI('addUser', { email, role }, 'POST');
+    if (data?.error) { alert('Błąd: ' + data.error); return; }
+    document.getElementById('add-user-modal')?.remove();
+    showToast('✅ Użytkownik dodany', 'success');
+    loadAdminUsers();
+  }
+
+  /* ── TYPES & CATEGORIES ──────────────────────── */
+  async function loadAdminTypesCategories() {
+    const [typesData, katData] = await Promise.all([callAPI('types'), callAPI('kategorie')]);
+    adminTypes      = typesData?.types || allTypes || [];
+    adminCategories = katData?.kategorie || allKategorie || [];
+    renderTagsEditor('types-editor',      adminTypes,      removeType);
+    renderTagsEditor('categories-editor', adminCategories, removeCategory);
+  }
+
+  function renderTagsEditor(containerId, items, removeFn) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!items.length) { el.innerHTML = '<span style="font-size:12px;color:var(--text-3)">Brak elementów.</span>'; return; }
+    el.innerHTML = items.map((item, i) => `
+      <div class="tag-item">
+        <span>${escHtml(item)}</span>
+        <button class="tag-del" onclick="${removeFn.name}(${i})" title="Usuń">×</button>
+      </div>`).join('');
+  }
+
+  function removeType(idx) {
+    adminTypes.splice(idx, 1);
+    renderTagsEditor('types-editor', adminTypes, removeType);
+  }
+
+  function removeCategory(idx) {
+    adminCategories.splice(idx, 1);
+    renderTagsEditor('categories-editor', adminCategories, removeCategory);
+  }
+
+  function addType() {
+    const input = document.getElementById('new-type-input');
+    const val = input?.value.trim();
+    if (!val) return;
+    if (adminTypes.includes(val)) { alert('Ten typ już istnieje.'); return; }
+    adminTypes.push(val);
+    renderTagsEditor('types-editor', adminTypes, removeType);
+    if (input) input.value = '';
+  }
+
+  function addCategory() {
+    const input = document.getElementById('new-cat-input');
+    const val = input?.value.trim();
+    if (!val) return;
+    if (adminCategories.includes(val)) { alert('Ta kategoria już istnieje.'); return; }
+    adminCategories.push(val);
+    renderTagsEditor('categories-editor', adminCategories, removeCategory);
+    if (input) input.value = '';
+  }
+
+  async function saveTypesAndCategories() {
+    const data = await callAPI('saveConfig', {
+      types:      adminTypes.join(','),
+      kategorie:  adminCategories.join(',')
+    }, 'POST');
+    if (data?.error) { alert('Błąd: ' + data.error); return; }
+    // Update global allTypes and allKategorie
+    allTypes     = [...adminTypes];
+    allKategorie = [...adminCategories];
+    populateTypeFilter(allTypes);
+    showToast('✅ Typy i kategorie zapisane', 'success');
+  }
+
+  /* ── SETTINGS ────────────────────────────────── */
+  async function loadAdminSettings() {
+    const data = await callAPI('getSettings');
+    if (data?.domain) {
+      const el = document.getElementById('setting-domain');
+      if (el) el.value = data.domain;
+    }
+    if (data?.admins) {
+      const el = document.getElementById('setting-admins');
+      if (el) el.value = data.admins;
+    }
+    const sheetEl = document.getElementById('setting-sheet-id');
+    if (sheetEl) sheetEl.textContent = SPREADSHEET_ID;
+  }
+
+  async function saveSetting(key) {
+    let payload = {};
+    if (key === 'domain') {
+      payload.domain = document.getElementById('setting-domain')?.value.trim();
+      if (!payload.domain) { alert('Podaj domenę.'); return; }
+    }
+    if (key === 'admins') {
+      payload.admins = document.getElementById('setting-admins')?.value.trim();
+    }
+    const data = await callAPI('saveSettings', payload, 'POST');
+    if (data?.error) { alert('Błąd: ' + data.error); return; }
+    showToast('✅ Ustawienie zapisane', 'success');
   }
 
   /* ── FORM (ETAP 3) ────────────────────────────── */
