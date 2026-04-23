@@ -1193,8 +1193,28 @@
     // if switching to user mode and on an admin-only page, go to baza
     if(mode==='user'){
       const activePage=document.querySelector('.page.active');
-      if(activePage&&(activePage.id==='page-admin'||activePage.id==='page-users')){
+      if(activePage&&(activePage.id==='page-admin'||activePage.id==='page-users'||activePage.id==='page-monitoring')){
         showPage('baza',document.getElementById('nav-baza'));
+      }
+      // Refresh verification panel to hide admin tabs
+      if (activePage?.id==='page-weryfikacja' && verifData) {
+        ['vtab-waiting','vtab-done'].forEach(id=>{
+          const el=document.getElementById(id);if(el)el.style.display='none';
+        });
+        if(currentVerifTab==='waiting'||currentVerifTab==='done'){
+          currentVerifTab='pending';
+          document.querySelectorAll('.vtab').forEach(b=>b.classList.remove('active'));
+          document.getElementById('vtab-pending')?.classList.add('active');
+        }
+        renderVerifTab(currentVerifTab);
+      }
+    } else {
+      // Switching back to admin — restore tabs if we have data
+      if (verifData?.canVerify) {
+        ['vtab-waiting','vtab-done'].forEach(id=>{
+          const el=document.getElementById(id);if(el)el.style.display='';
+        });
+        renderVerifTab(currentVerifTab);
       }
     }
   }
@@ -2475,12 +2495,18 @@
     }
     verifData = data;
     updateVerifCounts(data);
-    // Show extra tabs only for admin/weryfikator
-    const canV = data.canVerify;
+    // Show extra tabs only for admin/weryfikator AND only when not in user viewMode
+    const canV = data.canVerify && viewMode !== 'user';
     ['vtab-waiting','vtab-done'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = canV ? '' : 'none';
     });
+    // If currently on a tab that's now hidden, reset to pending
+    if (!canV && (currentVerifTab === 'waiting' || currentVerifTab === 'done')) {
+      currentVerifTab = 'pending';
+      document.querySelectorAll('.vtab').forEach(b => b.classList.remove('active'));
+      document.getElementById('vtab-pending')?.classList.add('active');
+    }
     renderVerifTab(currentVerifTab);
   }
 
@@ -2518,7 +2544,7 @@
       return;
     }
 
-    container.innerHTML = items.map(item => renderVerifCard(item, verifData.canVerify)).join('');
+    container.innerHTML = items.map(item => renderVerifCard(item, verifData.canVerify && viewMode !== 'user')).join('');
   }
 
   function renderVerifCard(item, canVerify) {
