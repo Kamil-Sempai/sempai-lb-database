@@ -846,9 +846,11 @@
       <div id="view-toggle-section" style="display:none">
         <div class="nav-group-label">Widok narzędzia</div>
         <div class="view-toggle-wrap">
+          <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;padding:0 2px">Podgląd widoku</div>
           <div class="view-toggle">
-            <button class="vt-btn active" id="vt-admin" onclick="setViewMode('admin')">Admin</button>
-            <button class="vt-btn" id="vt-user" onclick="setViewMode('user')">Użytkownik</button>
+            <button class="vt-btn active" id="vt-admin"       onclick="setViewMode('admin')">Super Admin</button>
+            <button class="vt-btn"        id="vt-weryfikator" onclick="setViewMode('weryfikator')">Weryfikator</button>
+            <button class="vt-btn"        id="vt-user"        onclick="setViewMode('user')">Użytkownik</button>
           </div>
         </div>
       </div>
@@ -1139,7 +1141,14 @@
               </div>
             </div>
             <div class="settings-row">
-              <div><div class="settings-label">Administratorzy (e-maile)</div><div class="settings-desc">Adresy e-mail z automatyczną rolą admina. Jeden na linię.</div></div>
+              <div><div class="settings-label">Wyjątki emailowe</div><div class="settings-desc">E-maile spoza domeny które mają mieć dostęp. Jeden na linię.</div></div>
+              <div>
+                <textarea class="field-textarea" id="setting-exceptions" rows="3" style="width:280px;min-height:72px" placeholder="jan@example.com"></textarea>
+                <button class="btn btn-primary btn-sm" onclick="saveSetting('exceptions')" style="margin-top:6px;float:right">Zapisz</button>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div><div class="settings-label">Super Administratorzy (e-maile)</div><div class="settings-desc">Adresy z automatyczną rolą Super Admin. Jeden na linię.</div></div>
               <div>
                 <textarea class="field-textarea" id="setting-admins" rows="3" style="width:280px;min-height:72px"></textarea>
                 <button class="btn btn-primary btn-sm" onclick="saveSetting('admins')" style="margin-top:6px;float:right">Zapisz</button>
@@ -1349,8 +1358,9 @@
     if(!isAdmin)return;
 
     // toggle buttons
-    document.getElementById('vt-admin').classList.toggle('active',mode==='admin');
-    document.getElementById('vt-user').classList.toggle('active',mode==='user');
+    document.getElementById('vt-admin')?.classList.toggle('active',mode==='admin');
+    document.getElementById('vt-weryfikator')?.classList.toggle('active',mode==='weryfikator');
+    document.getElementById('vt-user')?.classList.toggle('active',mode==='user');
 
     // show/hide admin nav items
     const adminItems=['admin-nav-label','nav-admin','nav-users','nav-monitoring'];
@@ -1358,28 +1368,36 @@
       const el=document.getElementById(id);
       if(el)el.style.display=mode==='admin'?'':'none';
     });
-    // hide Oczekuje stat card and Weryfikacja nav in user mode
-    const pendCard = document.getElementById('stat-card-pend');
-    if (pendCard) pendCard.style.display = mode === 'admin' ? '' : 'none';
+
+    // weryfikacja nav — visible for admin and weryfikator modes
     const navWer = document.getElementById('nav-weryfikacja');
-    if (navWer) navWer.style.display = mode === 'admin' ? 'flex' : 'none';
+    if (navWer) navWer.style.display = (mode==='admin'||mode==='weryfikator') ? 'flex' : 'none';
+
+    // hide Oczekuje stat card in non-admin modes
+    const pendCard = document.getElementById('stat-card-pend');
+    if (pendCard) pendCard.style.display = (mode==='admin'||mode==='weryfikator') ? '' : 'none';
 
     // sidebar view mode chip
     const chip=document.getElementById('view-mode-chip');
-    if(chip) chip.style.display=mode==='user'?'flex':'none';
+    const chipLabels = { admin:'', weryfikator:'Widok weryfikatora', user:'Widok użytkownika' };
+    if(chip){ chip.style.display=mode!=='admin'?'flex':'none'; chip.querySelector('span')?.textContent || (chip.textContent = chipLabels[mode]||''); }
 
-    // if switching to user mode and on an admin-only page, go to baza
-    if(mode==='user'){
+    // if switching away from admin and on admin-only page
+    if(mode!=='admin'){
       const activePage=document.querySelector('.page.active');
       if(activePage&&(activePage.id==='page-admin'||activePage.id==='page-users'||activePage.id==='page-monitoring')){
         showPage('baza',document.getElementById('nav-baza'));
       }
-      // Refresh verification panel to hide admin tabs
-      if (activePage?.id==='page-weryfikacja' && verifData) {
+      if(mode==='user' && activePage?.id==='page-weryfikacja'){
+        showPage('baza',document.getElementById('nav-baza'));
+      }
+      // Refresh verification panel tabs
+      if (verifData) {
+        const canV = verifData.canVerify && (mode==='admin'||mode==='weryfikator');
         ['vtab-waiting','vtab-done'].forEach(id=>{
-          const el=document.getElementById(id);if(el)el.style.display='none';
+          const el=document.getElementById(id);if(el)el.style.display=canV?'':'none';
         });
-        if(currentVerifTab==='waiting'||currentVerifTab==='done'){
+        if(!canV&&(currentVerifTab==='waiting'||currentVerifTab==='done')){
           currentVerifTab='pending';
           document.querySelectorAll('.vtab').forEach(b=>b.classList.remove('active'));
           document.getElementById('vtab-pending')?.classList.add('active');
@@ -1387,7 +1405,6 @@
         renderVerifTab(currentVerifTab);
       }
     } else {
-      // Switching back to admin — restore tabs if we have data
       if (verifData?.canVerify) {
         ['vtab-waiting','vtab-done'].forEach(id=>{
           const el=document.getElementById(id);if(el)el.style.display='';
@@ -1767,23 +1784,32 @@
 
   /* OLD enterApp body was here — now replaced */
   function applyRole(role) {
-    const isAdmin = role === 'admin';
-    const isPriv  = role === 'admin' || role === 'weryfikator';
-    const roleLabel = isAdmin ? 'Administrator' : (role === 'weryfikator' ? 'Weryfikator' : 'Specjalista SEO');
+    const isSuperAdm = role === 'super_admin' || ADMIN_EMAILS.includes(currentUser?.email);
+    const isAdm      = role === 'admin' || isSuperAdm;
+    const isPriv     = isAdm || role === 'weryfikator';
+    const roleLabels = { super_admin:'Super Administrator', admin:'Administrator', weryfikator:'Weryfikator', user:'Specjalista SEO' };
+    const roleLabel  = roleLabels[role] || 'Specjalista SEO';
     ['sb-role','prof-role'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=roleLabel});
-    // Show Oczekuje stat only for admin/weryfikator
+
+    // Show Oczekuje stat only for privileged roles
     const pendCard = document.getElementById('stat-card-pend');
     if (pendCard) pendCard.style.display = isPriv ? '' : 'none';
-    // Show Weryfikacja nav for admin/weryfikator
+
+    // Show Weryfikacja nav for privileged roles
     const navWer = document.getElementById('nav-weryfikacja');
     if (navWer) navWer.style.display = isPriv ? 'flex' : 'none';
-    if (isAdmin) {
+
+    if (isAdm) {
       document.getElementById('admin-nav-label').style.display='block';
       document.getElementById('nav-admin').style.display='flex';
       document.getElementById('nav-users').style.display='flex';
       document.getElementById('nav-monitoring').style.display='flex';
       document.getElementById('view-toggle-section').style.display='block';
     }
+
+    // Settings tab only for super_admin
+    const atabSettings = document.getElementById('atab-settings');
+    if (atabSettings) atabSettings.style.display = isSuperAdm ? '' : 'none';
   }
 
   function signOut(){
@@ -2222,7 +2248,8 @@
       return;
     }
 
-    const isAdminUser = sessionStorage.getItem('sld_role')==='admin' && viewMode==='admin';
+    const role = sessionStorage.getItem('sld_role');
+    const isAdminUser = (role==='admin'||role==='super_admin') && viewMode==='admin';
 
     const rows = data.items.map(item => {
       const badge   = statusBadge(item.code, item.status);
@@ -2687,6 +2714,7 @@
               <option value="user"        ${u.role==='user'       ?'selected':''}>Specjalista SEO</option>
               <option value="weryfikator" ${u.role==='weryfikator'?'selected':''}>Weryfikator</option>
               <option value="admin"       ${u.role==='admin'      ?'selected':''}>Administrator</option>
+              <option value="super_admin" ${u.role==='super_admin'?'selected':''}>Super Administrator</option>
             </select>
           </td>
           <td style="font-size:12px;color:var(--text-3)">${escHtml(u.firstLogin||'—')}</td>
@@ -2829,14 +2857,10 @@
   /* ── SETTINGS ────────────────────────────────── */
   async function loadAdminSettings() {
     const data = await callAPI('getSettings');
-    if (data?.domain) {
-      const el = document.getElementById('setting-domain');
-      if (el) el.value = data.domain;
-    }
-    if (data?.admins) {
-      const el = document.getElementById('setting-admins');
-      if (el) el.value = data.admins;
-    }
+    if (!data || data.error) { showToast('⚠️ Brak dostępu do ustawień (tylko Super Admin)', 'error'); return; }
+    if (data.domain)     { const el = document.getElementById('setting-domain');     if (el) el.value = data.domain; }
+    if (data.admins)     { const el = document.getElementById('setting-admins');     if (el) el.value = data.admins; }
+    if (data.exceptions !== undefined) { const el = document.getElementById('setting-exceptions'); if (el) el.value = data.exceptions; }
     const sheetEl = document.getElementById('setting-sheet-id');
     if (sheetEl) sheetEl.textContent = SPREADSHEET_ID;
   }
@@ -2847,9 +2871,8 @@
       payload.domain = document.getElementById('setting-domain')?.value.trim();
       if (!payload.domain) { alert('Podaj domenę.'); return; }
     }
-    if (key === 'admins') {
-      payload.admins = document.getElementById('setting-admins')?.value.trim();
-    }
+    if (key === 'admins')     payload.admins     = document.getElementById('setting-admins')?.value.trim();
+    if (key === 'exceptions') payload.exceptions = document.getElementById('setting-exceptions')?.value.trim();
     const data = await callAPI('saveSettings', payload, 'POST');
     if (data?.error) { alert('Błąd: ' + data.error); return; }
     showToast('✅ Ustawienie zapisane', 'success');
