@@ -1262,6 +1262,8 @@
         renderVerifTab(currentVerifTab);
       }
     }
+    // Re-render table to show/hide admin columns and buttons
+    renderFilteredPlaces();
   }
 
   /* ── USER MENU ────────────────────────────────── */
@@ -2685,6 +2687,44 @@
     if (bw) { bw.textContent=pending+waiting; bw.classList.toggle('hidden',!(pending+waiting)); }
   }
 
+  /* Token refresh — Google tokens expire after 1h */
+  function refreshToken() {
+    return new Promise((resolve, reject) => {
+      google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: [
+          'https://www.googleapis.com/auth/spreadsheets',
+          'https://www.googleapis.com/auth/drive',
+          'openid','email','profile'
+        ].join(' '),
+        hint: currentUser?.email,
+        callback: (resp) => {
+          if (resp.error) { reject(new Error('Token refresh failed: ' + resp.error)); return; }
+          currentUser = { ...currentUser, access_token: resp.access_token };
+          sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+          resolve(resp.access_token);
+        }
+      }).requestAccessToken({ prompt: '' }); // prompt:'' = silent refresh, no popup if possible
+    });
+  }
+
+  async function readSheetWithRetry(range) {
+    try {
+      return await readSheet(range);
+    } catch(err) {
+      // 401 = token expired — try to refresh once
+      if (err.message && (err.message.includes('401') || err.message.includes('invalid authentication') || err.message.includes('UNAUTHENTICATED'))) {
+        try {
+          await refreshToken();
+          return await readSheet(range); // retry with new token
+        } catch(refreshErr) {
+          throw new Error('Sesja wygasła. Wyloguj się i zaloguj ponownie.');
+        }
+      }
+      throw err;
+    }
+  }
+
   function escAttr(s){return String(s==null?'':s).replace(/'/g,'&#39;').replace(/"/g,'&quot;')}
 
   function showVerifTab(tab) {
@@ -3170,6 +3210,10 @@
           <input class="field-input" id="qe-name" value="${escHtml(item[2]||'')}" placeholder="Nazwa miejscówki">
         </div>
         <div class="field-row">
+          <div class="field-label">URL <span style="color:var(--danger)">*</span></div>
+          <input class="field-input" id="qe-url" type="url" value="${escHtml(item[1]||'')}" placeholder="https://example.com">
+        </div>
+        <div class="field-row">
           <div class="field-label">Dofollow</div>
           <select class="field-select-native" id="qe-dof">
             <option value="TAK" ${String(item[7]).toUpperCase()==='TAK'?'selected':''}>TAK — dofollow</option>
@@ -3193,10 +3237,13 @@
 
   async function submitQuickEdit(id) {
     const name  = document.getElementById('qe-name')?.value.trim();
+    const url   = document.getElementById('qe-url')?.value.trim();
     const dof   = document.getElementById('qe-dof')?.value;
     const notes = document.getElementById('qe-notes')?.value.trim();
 
-    const data = await callAPI('editPlace', { id, name, dofollow: dof, notes }, 'POST');
+    if (!url) { alert('URL jest wymagany.'); return; }
+
+    const data = await callAPI('editPlace', { id, name, url, dofollow: dof, notes }, 'POST');
     if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
     document.getElementById('qedit-modal').remove();
     showToast('✅ Zmiany zapisane', 'success');
@@ -3208,9 +3255,9 @@
     const toast = showToast('⟳ Synchronizacja z arkuszem…', 'info', 30000);
     try {
       const [placeValues, verifValues, cfgValues] = await Promise.all([
-        readSheet('baza_miejsc_lb!A:N'),
-        readSheet('weryfikacja!A:I'),
-        readSheet('konfiguracja!A:B')
+        readSheetWithRetry('baza_miejsc_lb!A:N'),
+        readSheetWithRetry('weryfikacja!A:I'),
+        readSheetWithRetry('konfiguracja!A:B')
       ]);
       const placeRows = placeValues.slice(1).filter(r=>r[1]);
       const verifRows = verifValues.slice(1).filter(r=>r[0]);
@@ -3220,12 +3267,13 @@
       allTypes = types; allPlacesRaw = placeRows;
       populateTypeFilter(types);
       renderStats(stats);
+      await preloadCommentCounts();
       renderFilteredPlaces();
       const bw = document.getElementById('badge-wer');
       if (bw) { bw.textContent = stats.pending; bw.classList.toggle('hidden', !stats.pending); }
       toast.update('✅ Zsynchronizowano pomyślnie', 'success');
     } catch(err) {
-      toast.update('⚠️ Błąd synchronizacji: ' + err.message, 'error');
+      toast.update('⚠️ ' + err.message, 'error');
     }
   }
 
