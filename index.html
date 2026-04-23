@@ -188,16 +188,16 @@
     [data-theme="dark"] .type-pill-social{color:#60A5FA}
 
     .table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:background var(--t),border-color var(--t)}
-    .table-scroll{overflow-x:auto}
-    table.data-table{width:100%;border-collapse:collapse;font-size:13px}
+    .table-scroll{overflow-x:auto;width:100%}
+    table.data-table{width:100%;min-width:100%;border-collapse:collapse;font-size:13px;table-layout:auto}
     table.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);border-bottom:1px solid var(--border);background:var(--bg-input);white-space:nowrap}
     table.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text-1);vertical-align:middle}
     table.data-table tr:last-child td{border-bottom:none}
     table.data-table tr:hover td{background:var(--bg-input)}
-    .td-url{max-width:260px}
-    .td-url a{color:var(--accent);font-weight:500;text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .td-url a:hover{text-decoration:underline}
-    .td-name{color:var(--text-2);font-size:11.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+    .td-url{max-width:280px}
+    .td-url a{color:var(--text-2);font-size:11.5px;text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .td-url a:hover{text-decoration:underline;color:var(--accent)}
+    .td-name{color:var(--text-1);font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
     .type-pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:var(--bg-input);color:var(--text-2);border:1px solid var(--border)}
     .status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
     .status-ok    {background:rgba(16,185,129,0.12);color:#059669;border:1px solid rgba(16,185,129,0.25)}
@@ -389,6 +389,12 @@
     /* ── REFRESH BAR (stale-while-revalidate) ─── */
     .refresh-bar{height:3px;background:var(--border);overflow:hidden;border-radius:0}
     .refresh-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#7C3AED);width:0%;transition:width 0.2s linear;border-radius:99px}
+
+    .row-action-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all var(--t);flex-shrink:0}
+    .row-action-btn.edit{color:var(--text-3)}
+    .row-action-btn.edit:hover{background:rgba(59,123,255,0.1);border-color:rgba(59,123,255,0.3);color:var(--accent)}
+    .row-action-btn.del{color:var(--text-3)}
+    .row-action-btn.del:hover{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--danger)}
 
     /* ── TABLE ROW SELECTION (delete) ──────────── */
     .td-cb{width:32px;padding:0 8px 0 4px!important;vertical-align:middle}
@@ -1060,16 +1066,23 @@
         <div class="mon-controls">
           <div class="mon-last-check" id="mon-last-check">Ostatnie sprawdzenie: —</div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <!-- Schedule -->
+            <!-- Current schedule status -->
+            <div style="display:flex;align-items:center;gap:8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--r);padding:6px 12px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span style="font-size:12px;color:var(--text-3)">Harmonogram:</span>
+              <span style="font-size:12.5px;font-weight:600;color:var(--text-1)" id="mon-schedule-status">Ładowanie…</span>
+            </div>
+            <!-- Change schedule -->
             <div class="mon-schedule-wrap">
-              <select class="filter-select" id="mon-schedule-sel">
-                <option value="">Harmonogram: wyłączony</option>
+              <select class="filter-select" id="mon-schedule-sel" style="font-size:12.5px">
+                <option value="">Zmień harmonogram</option>
+                <option value="off">Wyłącz harmonogram</option>
                 <option value="6">Co 6 godzin</option>
                 <option value="12">Co 12 godzin</option>
                 <option value="24">Co 24 godziny</option>
                 <option value="168">Co tydzień</option>
               </select>
-              <button class="btn btn-ghost btn-sm" onclick="saveSchedule()">Zapisz harmonogram</button>
+              <button class="btn btn-ghost btn-sm" onclick="saveSchedule()">Zapisz</button>
             </div>
             <button class="btn btn-primary" id="mon-check-btn" onclick="triggerDomainCheck()">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
@@ -2088,10 +2101,10 @@
         ${cbCell}
         <td class="td-url">
           <div style="display:flex;align-items:flex-start">
-            <span style="margin-top:2px;flex-shrink:0">${favImg}</span>
+            <span style="margin-top:3px;flex-shrink:0">${favImg}</span>
             <div style="min-width:0">
-              <a href="${escHtml(item.url)}" target="_blank" rel="noopener" title="${escHtml(item.url)}">${escHtml(truncate(item.url, 44))}</a>
               ${item.name ? `<div class="td-name">${escHtml(item.name)}</div>` : ''}
+              <a href="${escHtml(item.url)}" target="_blank" rel="noopener" title="${escHtml(item.url)}">${escHtml(truncate(item.url, 44))}</a>
             </div>
           </div>
         </td>
@@ -2101,15 +2114,24 @@
         <td class="td-num">${item.dr || '—'}</td>
         <td class="td-num" style="color:var(--${doStr==='✓'?'success':'text-3'})">${doStr}</td>
         <td class="td-date">${item.lastCheck || '—'}</td>
-        <td>
-          <button class="${cmtClass}" id="cbtn-${escAttr(item.id)}" onclick="toggleComments('${escAttr(item.id)}','${escAttr(item.url)}')">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            <span id="cbtn-label-${escAttr(item.id)}">${cmtLabel}</span>
-          </button>
+        <td style="white-space:nowrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            ${isAdminUser ? `
+            <button class="row-action-btn edit" onclick="openQuickEdit('${escAttr(item.id)}',event)" title="Edytuj">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="row-action-btn del" onclick="deleteSinglePlace('${escAttr(item.id)}','${escAttr(item.name||item.url)}',event)" title="Usuń miejscówkę">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            </button>` : ''}
+            <button class="${cmtClass}" id="cbtn-${escAttr(item.id)}" onclick="toggleComments('${escAttr(item.id)}','${escAttr(item.url)}')">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              <span id="cbtn-label-${escAttr(item.id)}">${cmtLabel}</span>
+            </button>
+          </div>
         </td>
       </tr>
       <tr class="comments-row" id="${cmtId}" style="display:none">
-        <td colspan="8">
+        <td colspan="${isAdminUser?9:8}">
           <div class="comments-panel">
             <div class="comments-inner" id="cinner-${escAttr(item.id)}">
               <div class="comment-loading">Ładowanie komentarzy…</div>
@@ -2891,6 +2913,8 @@
 
   function renderMonitoring() {
     if (!allPlacesRaw.length) return;
+    // Load schedule status async
+    loadScheduleStatus();
 
     const filter = document.getElementById('mon-filter-status')?.value || '';
 
@@ -3084,13 +3108,100 @@
     alert(`✅ Sprawdzono ${data.checked||0} domen.`);
   }
 
+  async function loadScheduleStatus() {
+    const el = document.getElementById('mon-schedule-status');
+    if (!el) return;
+    const data = await callAPI('getSchedule');
+    if (data?.active) {
+      el.textContent = data.label || 'Aktywny';
+      el.style.color = 'var(--success)';
+    } else {
+      el.textContent = 'Wyłączony';
+      el.style.color = 'var(--text-3)';
+    }
+  }
+
   async function saveSchedule() {
     const val = document.getElementById('mon-schedule-sel')?.value;
-    const data = val
-      ? await callAPI('setSchedule',    { hours: val }, 'POST')
-      : await callAPI('deleteSchedule', {},             'POST');
+    if (!val) return;
+    let data;
+    if (val === 'off') {
+      data = await callAPI('deleteSchedule', {}, 'POST');
+    } else {
+      data = await callAPI('setSchedule', { hours: val }, 'POST');
+    }
     if (data?.error) { alert('Błąd: ' + data.error); return; }
-    alert(val ? `✅ Harmonogram: co ${val}h` : '✅ Harmonogram wyłączony.');
+    document.getElementById('mon-schedule-sel').value = '';
+    showToast(val === 'off' ? '✅ Harmonogram wyłączony' : `✅ Harmonogram: co ${val}h`, 'success');
+    loadScheduleStatus();
+  }
+
+  /* ── SINGLE PLACE DELETE ──────────────────────── */
+  async function deleteSinglePlace(id, name, event) {
+    event?.stopPropagation();
+    if (!confirm(`Usunąć miejscówkę "${name}"? Tej operacji nie można cofnąć.`)) return;
+    const data = await callAPI('deletePlaces', { ids: [String(id)] }, 'POST');
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+    showToast('✅ Miejscówka usunięta', 'success');
+    await refreshDataInBackground();
+    renderFilteredPlaces();
+  }
+
+  /* ── QUICK EDIT ───────────────────────────────── */
+  function openQuickEdit(id, event) {
+    event?.stopPropagation();
+    const item = allPlacesRaw.find(r => String(r[0]) === String(id));
+    if (!item) return;
+    const existing = document.getElementById('qedit-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay show';
+    modal.id = 'qedit-modal';
+    modal.innerHTML = `<div class="modal-box" style="max-width:520px">
+      <div class="modal-head">
+        <div class="modal-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B7BFF" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <h2 class="modal-title">Edytuj miejscówkę</h2>
+        <p class="modal-sub" style="font-size:12px;color:var(--text-3)">${escHtml(item[1]||'')}</p>
+      </div>
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field-label">Nazwa</div>
+          <input class="field-input" id="qe-name" value="${escHtml(item[2]||'')}" placeholder="Nazwa miejscówki">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Dofollow</div>
+          <select class="field-select-native" id="qe-dof">
+            <option value="TAK" ${String(item[7]).toUpperCase()==='TAK'?'selected':''}>TAK — dofollow</option>
+            <option value="NIE" ${String(item[7]).toUpperCase()==='NIE'?'selected':''}>NIE — nofollow</option>
+            <option value="" ${!item[7]?'selected':''}>— nie określono —</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Notatki</div>
+          <textarea class="field-textarea" id="qe-notes" rows="3">${escHtml(item[13]||'')}</textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('qedit-modal').remove()">Anuluj</button>
+        <button class="btn btn-primary btn-sm" onclick="submitQuickEdit('${escAttr(id)}')">Zapisz zmiany</button>
+      </div>
+    </div>`;
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+  }
+
+  async function submitQuickEdit(id) {
+    const name  = document.getElementById('qe-name')?.value.trim();
+    const dof   = document.getElementById('qe-dof')?.value;
+    const notes = document.getElementById('qe-notes')?.value.trim();
+
+    const data = await callAPI('editPlace', { id, name, dofollow: dof, notes }, 'POST');
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+    document.getElementById('qedit-modal').remove();
+    showToast('✅ Zmiany zapisane', 'success');
+    await refreshDataInBackground();
+    renderFilteredPlaces();
   }
 
   async function forceSync() {
