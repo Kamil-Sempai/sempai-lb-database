@@ -879,13 +879,13 @@
             <div class="stat-breakdown" id="sbd-ok"><div class="sbd-loading">Ładowanie…</div></div>
           </div>
           <div class="stat-card">
-            <div class="stat-card-label"><span class="stat-dot" style="background:#F59E0B"></span>Oczekuje</div>
-            <div class="stat-val" id="stat-pend">—</div><div class="stat-hint">do weryfikacji</div>
-          </div>
-          <div class="stat-card">
             <div class="stat-card-label"><span class="stat-dot" style="background:#EF4444"></span>Nieaktywnych</div>
             <div class="stat-val" id="stat-err">—</div><div class="stat-hint">błędy 4xx / 5xx</div>
             <div class="stat-breakdown" id="sbd-err"><div class="sbd-loading">Ładowanie…</div></div>
+          </div>
+          <div class="stat-card" id="stat-card-pend" style="display:none">
+            <div class="stat-card-label"><span class="stat-dot" style="background:#F59E0B"></span>Oczekuje</div>
+            <div class="stat-val" id="stat-pend">—</div><div class="stat-hint">do weryfikacji</div>
           </div>
         </div>
 
@@ -901,7 +901,6 @@
             <option value="">Wszystkie statusy</option>
             <option value="ok">Aktywne (OK)</option>
             <option value="error">Błędy (4xx/5xx)</option>
-            <option value="unknown">Nie sprawdzono</option>
           </select>
           <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Wyczyść</button>
           <button class="btn btn-primary" onclick="showPage('dodaj',document.getElementById('nav-dodaj'))">
@@ -1230,6 +1229,9 @@
       const el=document.getElementById(id);
       if(el)el.style.display=mode==='admin'?'':'none';
     });
+    // hide Oczekuje stat card in user mode
+    const pendCard = document.getElementById('stat-card-pend');
+    if (pendCard) pendCard.style.display = mode === 'admin' ? '' : 'none';
 
     // sidebar view mode chip
     const chip=document.getElementById('view-mode-chip');
@@ -1635,8 +1637,12 @@
   /* OLD enterApp body was here — now replaced */
   function applyRole(role) {
     const isAdmin = role === 'admin';
-    const roleLabel = isAdmin ? 'Administrator' : 'Specjalista SEO';
+    const isPriv  = role === 'admin' || role === 'weryfikator';
+    const roleLabel = isAdmin ? 'Administrator' : (role === 'weryfikator' ? 'Weryfikator' : 'Specjalista SEO');
     ['sb-role','prof-role'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=roleLabel});
+    // Show Oczekuje stat only for admin/weryfikator
+    const pendCard = document.getElementById('stat-card-pend');
+    if (pendCard) pendCard.style.display = isPriv ? '' : 'none';
     if (isAdmin) {
       document.getElementById('admin-nav-label').style.display='block';
       document.getElementById('nav-admin').style.display='flex';
@@ -2510,6 +2516,23 @@
     }
   }
 
+  function checkDuplicateUrl(val) {
+    const dup    = document.getElementById('ff-url-dup');
+    const dupName = document.getElementById('ff-url-dup-name');
+    if (!dup || !val || val.length < 5) { if(dup) dup.style.display='none'; return; }
+    const norm = val.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+    const found = allPlacesRaw.find(r => {
+      const ex = String(r[1]||'').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+      return ex === norm;
+    });
+    if (found) {
+      dup.style.display = '';
+      dupName.textContent = found[2] || found[1];
+    } else {
+      dup.style.display = 'none';
+    }
+  }
+
   function setFormMode(mode) {
     formMode = mode;
     document.getElementById('mode-btn-checked').classList.toggle('active', mode === 'checked');
@@ -2536,7 +2559,10 @@
     let html = `
       <div class="field-row">
         <div class="field-label">URL <span>*</span></div>
-        <input class="field-input" id="ff-url" type="url" placeholder="https://example.com">
+        <input class="field-input" id="ff-url" type="url" placeholder="https://example.com" oninput="checkDuplicateUrl(this.value)">
+        <div id="ff-url-dup" style="display:none;margin-top:5px;padding:7px 10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:var(--r);font-size:12px;color:#D97706">
+          ⚠️ Ta domena już istnieje w bazie: <strong id="ff-url-dup-name"></strong>
+        </div>
       </div>
       <div class="field-row">
         <div class="field-label">Nazwa <span>*</span></div>
@@ -2606,6 +2632,18 @@
     if (!formType) { alert('Wybierz typ miejscówki.'); return; }
     if (formType === 'Profile' && !kategoria) { alert('Wybierz kategorię tematyczną.'); return; }
     if (isChecked && !linkDo) { alert('Podaj link do dodanego linku — to pole jest wymagane przy miejscówce sprawdzonej.'); return; }
+
+    // Check for duplicate URL
+    const normalizedUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+    const duplicate = allPlacesRaw.find(r => {
+      const existing = String(r[1]||'').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+      return existing === normalizedUrl;
+    });
+    if (duplicate) {
+      const dupName = duplicate[2] || duplicate[1];
+      const proceed = confirm(`⚠️ Ta domena już znajduje się w bazie jako "${dupName}".\n\nCzy chcesz mimo to dodać ją ponownie?`);
+      if (!proceed) return;
+    }
 
     const btn = document.getElementById('form-submit-btn');
     btn.disabled = true; btn.textContent = 'Wysyłanie…';
