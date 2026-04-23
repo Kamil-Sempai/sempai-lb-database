@@ -190,12 +190,11 @@
     .table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:background var(--t),border-color var(--t)}
     .table-scroll{overflow-x:auto}
     table.data-table{width:100%;border-collapse:collapse;font-size:13px}
-    table.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);border-bottom:1px solid var(--border);background:var(--bg-input);white-space:nowrap}
+    table.data-table thead{background:var(--bg-input);width:100%}
+    table.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);border-bottom:1px solid var(--border);background:transparent;white-space:nowrap}
     table.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text-1);vertical-align:middle}
     table.data-table tr:last-child td{border-bottom:none}
     table.data-table tr:hover td{background:var(--bg-input)}
-    /* Fix: filler th at end so header background always extends full width */
-    table.data-table thead tr::after{content:'';display:table-cell;background:var(--bg-input);border-bottom:1px solid var(--border);width:100%}
     .td-url{max-width:280px}
     .td-url a{color:var(--text-2);font-size:11.5px;text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
     .td-url a:hover{text-decoration:underline;color:var(--accent)}
@@ -2106,7 +2105,7 @@
       const dofCell = doStr === 'tak'
         ? `<span style="color:var(--success);font-size:15px;font-weight:700">✓</span>`
         : doStr === 'nie'
-          ? `<span style="color:var(--danger);font-size:14px;font-weight:700;text-decoration:line-through;opacity:0.85">✕</span>`
+          ? `<span style="color:var(--danger);font-size:15px;font-weight:700">✗</span>`
           : `<span style="color:var(--text-3)">—</span>`;
       const isSM    = item.type === 'Social Media';
       const accBtn  = isSM ? `<span class="accounts-btn" onclick="openAccountsModal('${escAttr(item.id)}','${escAttr(item.url)}','${escAttr(item.name||'')}')">👤 Konta</span>` : '';
