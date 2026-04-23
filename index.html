@@ -819,6 +819,11 @@
             Lokalizacja plików narzędzia
           </button>
           <div class="udrop-sep"></div>
+          <button class="udrop-item" onclick="forceSync();closeUserMenu()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Wymuś synchronizację
+          </button>
+          <div class="udrop-sep"></div>
           <button class="udrop-item danger" onclick="signOut()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Wyloguj się
@@ -891,14 +896,14 @@
 
       <!-- WERYFIKACJA -->
       <div class="page" id="page-weryfikacja">
-        <div class="verif-tabs">
+        <div class="verif-tabs" id="verif-tabs-wrap">
           <button class="vtab active" id="vtab-pending" onclick="showVerifTab('pending')">
             Do weryfikacji <span class="vtab-count hidden" id="vcount-pending">0</span>
           </button>
-          <button class="vtab" id="vtab-waiting" onclick="showVerifTab('waiting')">
+          <button class="vtab" id="vtab-waiting" onclick="showVerifTab('waiting')" style="display:none">
             Czeka na akceptację <span class="vtab-count blue hidden" id="vcount-waiting">0</span>
           </button>
-          <button class="vtab" id="vtab-done" onclick="showVerifTab('done')">Zakończone</button>
+          <button class="vtab" id="vtab-done" onclick="showVerifTab('done')" style="display:none">Zakończone</button>
         </div>
         <div id="verif-container">
           <div class="verif-empty"><div class="verif-empty-icon">⏳</div>Ładowanie…</div>
@@ -2339,6 +2344,7 @@
   function renderFormFields(type) {
     const container = document.getElementById('form-fields-container');
     formDofollow = 'TAK';
+    const isChecked = formMode === 'checked';
 
     // Common fields: URL, Nazwa
     let html = `
@@ -2369,19 +2375,28 @@
       </div>`;
     }
 
-    // Dofollow — all types
-    html += `<div class="field-row">
-      <div class="field-label">Dofollow <span>*</span></div>
-      <div class="dofollow-toggle">
-        <button class="df-btn active-yes" id="df-tak" onclick="setDofollow('TAK')">✓ TAK — dofollow</button>
-        <button class="df-btn" id="df-nie" onclick="setDofollow('NIE')">✗ NIE — nofollow</button>
-      </div>
-    </div>`;
+    // Dofollow — tylko w trybie "Sprawdzona przeze mnie"
+    if (isChecked) {
+      html += `<div class="field-row">
+        <div class="field-label">Dofollow <span>*</span></div>
+        <div class="dofollow-toggle">
+          <button class="df-btn active-yes" id="df-tak" onclick="setDofollow('TAK')">✓ TAK — dofollow</button>
+          <button class="df-btn" id="df-nie" onclick="setDofollow('NIE')">✗ NIE — nofollow</button>
+        </div>
+      </div>`;
+
+      // Link do dodanego linku — obowiązkowe w trybie "Sprawdzona"
+      html += `<div class="field-row">
+        <div class="field-label">Link do dodanego linku <span>*</span></div>
+        <input class="field-input" id="ff-link" type="url" placeholder="https://example.com/artykul-z-linkiem">
+        <div class="field-hint">Link do konkretnej podstrony gdzie dodałeś/aś link. Admin użyje go do weryfikacji.</div>
+      </div>`;
+    }
 
     // Notatki — all types
     html += `<div class="field-row">
       <div class="field-label">Notatki</div>
-      <textarea class="field-textarea" id="ff-notes" placeholder="Instrukcja jak dodać link, dodatkowe informacje…"></textarea>
+      <textarea class="field-textarea" id="ff-notes" placeholder="${isChecked ? 'Instrukcja jak dodać link, dodatkowe informacje…' : 'Opis miejscówki, skąd ją znasz, co wiesz o niej…'}"></textarea>
     </div>`;
 
     container.innerHTML = html;
@@ -2394,21 +2409,26 @@
   }
 
   async function submitForm() {
-    const url  = document.getElementById('ff-url')?.value.trim();
-    const name = document.getElementById('ff-name')?.value.trim();
-    const kategoria = document.getElementById('ff-kategoria')?.value || '';
-    const notes = document.getElementById('ff-notes')?.value.trim() || '';
+    const url      = document.getElementById('ff-url')?.value.trim();
+    const name     = document.getElementById('ff-name')?.value.trim();
+    const kategoria= document.getElementById('ff-kategoria')?.value || '';
+    const notes    = document.getElementById('ff-notes')?.value.trim() || '';
+    const linkDo   = document.getElementById('ff-link')?.value.trim() || '';
+    const isChecked = formMode === 'checked';
 
     if (!url) { alert('Podaj URL miejscówki.'); return; }
     if (!formType) { alert('Wybierz typ miejscówki.'); return; }
     if (formType === 'Profile' && !kategoria) { alert('Wybierz kategorię tematyczną.'); return; }
+    if (isChecked && !linkDo) { alert('Podaj link do dodanego linku — to pole jest wymagane przy miejscówce sprawdzonej.'); return; }
 
     const btn = document.getElementById('form-submit-btn');
     btn.disabled = true; btn.textContent = 'Wysyłanie…';
 
     const data = await callAPI('addPlace', {
-      url, name, type: formType, kategoria, dofollow: formDofollow,
-      notes, checked: formMode === 'checked'
+      url, name, type: formType, kategoria,
+      dofollow: isChecked ? formDofollow : '',
+      notes, linkDo,
+      checked: isChecked
     }, 'POST');
 
     btn.disabled = false; btn.textContent = 'Wyślij do weryfikacji';
@@ -2420,15 +2440,13 @@
 
     // Show success
     document.getElementById('form-main').style.display = 'none';
-    const succ = document.getElementById('form-success');
-    succ.classList.add('show');
-    document.getElementById('form-success-desc').textContent =
-      formMode === 'checked'
-        ? 'Miejscówka trafiła do panelu weryfikacji. Admin lub weryfikator ją zatwierdzi.'
-        : 'Miejscówka trafiła jako "Do weryfikacji". Inni specjaliści mogą ją sprawdzić i uzupełnić.';
+    document.getElementById('form-success').classList.add('show');
+    document.getElementById('form-success-desc').textContent = isChecked
+      ? 'Miejscówka trafiła do panelu weryfikacji. Admin lub weryfikator ją zatwierdzi.'
+      : 'Miejscówka trafiła jako "Do weryfikacji". Inni specjaliści mogą ją sprawdzić i uzupełnić.';
 
-    // Refresh verification badge
-    loadStats();
+    // Auto-refresh data in background (zmiana 5)
+    refreshDataInBackground();
   }
 
   function resetForm() {
@@ -2457,6 +2475,12 @@
     }
     verifData = data;
     updateVerifCounts(data);
+    // Show extra tabs only for admin/weryfikator
+    const canV = data.canVerify;
+    ['vtab-waiting','vtab-done'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = canV ? '' : 'none';
+    });
     renderVerifTab(currentVerifTab);
   }
 
@@ -2470,6 +2494,8 @@
     if (cw) { cw.textContent=waiting; cw.classList.toggle('hidden',!waiting); }
     if (bw) { bw.textContent=pending+waiting; bw.classList.toggle('hidden',!(pending+waiting)); }
   }
+
+  function escAttr(s){return String(s==null?'':s).replace(/'/g,'&#39;').replace(/"/g,'&quot;')}
 
   function showVerifTab(tab) {
     currentVerifTab = tab;
@@ -2510,6 +2536,10 @@
         <div class="vd-item"><div class="vd-label">Kategoria</div><div class="vd-val">${escHtml(item.kategoria||'—')}</div></div>
         <div class="vd-item"><div class="vd-label">Dofollow</div><div class="vd-val">${escHtml(item.dofollow||'—')}</div></div>
       </div>
+      ${item.linkDo ? `<div style="font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.5">
+        <strong>🔗 Link do dodanego linku:</strong>
+        <a href="${escHtml(item.linkDo)}" target="_blank" rel="noopener" style="color:var(--accent);word-break:break-all">${escHtml(item.linkDo)}</a>
+      </div>` : ''}
       ${item.notes ? `<div style="font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.5"><strong>Notatki:</strong> ${escHtml(item.notes)}</div>` : ''}
       ${item.adminNotes ? `<div style="font-size:12.5px;color:var(--text-3);margin-bottom:10px;line-height:1.5"><strong>Uwagi admina:</strong> ${escHtml(item.adminNotes)}</div>` : ''}`;
 
@@ -2543,7 +2573,8 @@
     const notes = document.getElementById('anotes-'+id)?.value || '';
     const data = await callAPI('approvePlace', { id, adminNotes: notes }, 'POST');
     if (data?.error) { alert('Błąd: ' + data.error); return; }
-    loadVerification(); loadStats(); loadPlaces(1);
+    loadVerification();
+    refreshDataInBackground(); // zmiana 5 — odśwież dane w tle
   }
 
   async function rejectItem(id) {
@@ -2894,7 +2925,54 @@
     alert(val ? `✅ Harmonogram: co ${val}h` : '✅ Harmonogram wyłączony.');
   }
 
-  function escAttr(s){return String(s==null?'':s).replace(/'/g,'&#39;').replace(/"/g,'&quot;')}
+  async function forceSync() {
+    const toast = showToast('⟳ Synchronizacja z arkuszem…', 'info', 30000);
+    try {
+      const [placeValues, verifValues, cfgValues] = await Promise.all([
+        readSheet('baza_miejsc_lb!A:N'),
+        readSheet('weryfikacja!A:I'),
+        readSheet('konfiguracja!A:B')
+      ]);
+      const placeRows = placeValues.slice(1).filter(r=>r[1]);
+      const verifRows = verifValues.slice(1).filter(r=>r[0]);
+      const types     = parseTypes(cfgValues);
+      const stats     = calcStats(placeRows, verifRows, types);
+      saveCache({ types, places: placeRows, stats });
+      allTypes = types; allPlacesRaw = placeRows;
+      populateTypeFilter(types);
+      renderStats(stats);
+      renderFilteredPlaces();
+      const bw = document.getElementById('badge-wer');
+      if (bw) { bw.textContent = stats.pending; bw.classList.toggle('hidden', !stats.pending); }
+      toast.update('✅ Zsynchronizowano pomyślnie', 'success');
+    } catch(err) {
+      toast.update('⚠️ Błąd synchronizacji: ' + err.message, 'error');
+    }
+  }
+
+  function showToast(msg, type='info', duration=3500) {
+    let t = document.getElementById('lb-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'lb-toast';
+      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:99px;font-size:13px;font-weight:500;font-family:var(--font);z-index:9999;transition:all 0.3s ease;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.25)';
+      document.body.appendChild(t);
+    }
+    const colors = { info:'background:#1E2D4E;color:#A5B4FC;border:1px solid rgba(165,180,252,0.2)', success:'background:#052E16;color:#34D399;border:1px solid rgba(52,211,153,0.2)', error:'background:#3B0A0A;color:#F87171;border:1px solid rgba(248,113,113,0.2)' };
+    t.style.cssText += ';' + (colors[type]||colors.info);
+    t.textContent = msg;
+    t.style.opacity = '1';
+    if (t._timer) clearTimeout(t._timer);
+    t._timer = duration < 30000 ? setTimeout(() => { t.style.opacity='0'; }, duration) : null;
+    return {
+      update(newMsg, newType='info') {
+        t.style.cssText = t.style.cssText.split(';').slice(0,-1).join(';') + ';' + (colors[newType]||colors.info);
+        t.textContent = newMsg;
+        if (t._timer) clearTimeout(t._timer);
+        t._timer = setTimeout(() => { t.style.opacity='0'; }, 3500);
+      }
+    };
+  }
 
   /* ── LOADER ───────────────────────────────────── */
   function hideLoader(){const l=document.getElementById('loader');if(!l)return;l.classList.add('hidden');setTimeout(()=>{if(l.parentNode)l.remove()},400)}
