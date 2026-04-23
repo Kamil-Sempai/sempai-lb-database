@@ -99,7 +99,7 @@
     /* VIEW MODE TOGGLE (admin only) */
     .view-toggle-wrap{padding:6px 10px 4px}
     .view-toggle{display:flex;background:rgba(255,255,255,0.06);border-radius:8px;padding:3px;gap:2px}
-    .vt-btn{flex:1;padding:5px 8px;border:none;border-radius:6px;font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all var(--t);color:rgba(255,255,255,0.4);background:transparent;text-align:center}
+    .vt-btn{flex:1;padding:4px 4px;border:none;border-radius:5px;font-family:var(--font);font-size:10px;font-weight:600;cursor:pointer;transition:all var(--t);color:rgba(255,255,255,0.4);background:transparent;text-align:center;white-space:nowrap}
     .vt-btn.active{background:var(--accent);color:#FFF}
 
     /* MAIN */
@@ -1132,14 +1132,6 @@
         <div class="admin-section" id="asec-settings">
           <div class="form-card">
             <div class="form-section-title">Ustawienia narzędzia</div>
-            <div class="settings-row">
-              <div><div class="settings-label">Dozwolona domena</div><div class="settings-desc">Tylko użytkownicy @ta-domena.pl będą mogli się zalogować.</div></div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:13px;color:var(--text-3)">@</span>
-                <input class="field-input" id="setting-domain" placeholder="sempai.pl" style="width:180px">
-                <button class="btn btn-primary btn-sm" onclick="saveSetting('domain')">Zapisz</button>
-              </div>
-            </div>
             <div class="settings-row">
               <div><div class="settings-label">Wyjątki emailowe</div><div class="settings-desc">E-maile spoza domeny które mają mieć dostęp. Jeden na linię.</div></div>
               <div>
