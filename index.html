@@ -188,14 +188,14 @@
     [data-theme="dark"] .type-pill-social{color:#60A5FA}
 
     .table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:background var(--t),border-color var(--t)}
-    .table-scroll{overflow-x:auto;width:100%}
+    .table-scroll{overflow-x:auto}
     table.data-table{width:100%;border-collapse:collapse;font-size:13px}
     table.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);border-bottom:1px solid var(--border);background:var(--bg-input);white-space:nowrap}
     table.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text-1);vertical-align:middle}
     table.data-table tr:last-child td{border-bottom:none}
     table.data-table tr:hover td{background:var(--bg-input)}
-    table.data-table thead tr th:last-child{width:100%}
-    table.data-table tbody tr td:last-child{white-space:nowrap}
+    /* Fix: filler th at end so header background always extends full width */
+    table.data-table thead tr::after{content:'';display:table-cell;background:var(--bg-input);border-bottom:1px solid var(--border);width:100%}
     .td-url{max-width:280px}
     .td-url a{color:var(--text-2);font-size:11.5px;text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
     .td-url a:hover{text-decoration:underline;color:var(--accent)}
@@ -782,7 +782,7 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
         Baza miejsc LB
       </button>
-      <button class="nav-item" id="nav-weryfikacja" onclick="showPage('weryfikacja',this)">
+      <button class="nav-item" id="nav-weryfikacja" style="display:none" onclick="showPage('weryfikacja',this)">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Weryfikacja<span class="nav-badge hidden" id="badge-wer">0</span>
       </button>
@@ -1231,9 +1231,11 @@
       const el=document.getElementById(id);
       if(el)el.style.display=mode==='admin'?'':'none';
     });
-    // hide Oczekuje stat card in user mode
+    // hide Oczekuje stat card and Weryfikacja nav in user mode
     const pendCard = document.getElementById('stat-card-pend');
     if (pendCard) pendCard.style.display = mode === 'admin' ? '' : 'none';
+    const navWer = document.getElementById('nav-weryfikacja');
+    if (navWer) navWer.style.display = mode === 'admin' ? 'flex' : 'none';
 
     // sidebar view mode chip
     const chip=document.getElementById('view-mode-chip');
@@ -1572,7 +1574,7 @@
           readSheet('konfiguracja!A:B')
         ]);
         placeRows=placeValues.slice(1).filter(r=>r[1]);
-        const verifRows=verifValues.slice(1).filter(r=>r[0]);
+        const verifRows=verifValues.slice(1).filter(r=>r[0]); allVerifRaw=verifRows;
         types=parseTypes(cfgValues);
         stats=calcStats(placeRows, verifRows, types);
         saveCache({types, places:placeRows, stats});
@@ -1622,7 +1624,7 @@
         readSheet('konfiguracja!A:B')
       ]);
       const placeRows=placeValues.slice(1).filter(r=>r[1]);
-      const verifRows=verifValues.slice(1).filter(r=>r[0]);
+      const verifRows=verifValues.slice(1).filter(r=>r[0]); allVerifRaw=verifRows;
       const types=parseTypes(cfgValues);
       const stats=calcStats(placeRows, verifRows, types);
       saveCache({types, places:placeRows, stats});
@@ -1645,6 +1647,9 @@
     // Show Oczekuje stat only for admin/weryfikator
     const pendCard = document.getElementById('stat-card-pend');
     if (pendCard) pendCard.style.display = isPriv ? '' : 'none';
+    // Show Weryfikacja nav for admin/weryfikator
+    const navWer = document.getElementById('nav-weryfikacja');
+    if (navWer) navWer.style.display = isPriv ? 'flex' : 'none';
     if (isAdmin) {
       document.getElementById('admin-nav-label').style.display='block';
       document.getElementById('nav-admin').style.display='flex';
@@ -1666,6 +1671,7 @@
   /* ── DATA LAYER — Opcja A: bezpośrednie Sheets API + Opcja B: cache ── */
   let searchTimer  = null;
   let allPlacesRaw = []; // all rows from sheet — filtering done client-side (instant)
+  let allVerifRaw  = []; // verifikation rows — for duplicate checking
   const DATA_KEY   = 'sld_data_v2';
   const DATA_TTL   = 5 * 60 * 1000; // 5 min stale-while-revalidate
 
@@ -2096,7 +2102,12 @@
 
     const rows = data.items.map(item => {
       const badge   = statusBadge(item.code, item.status);
-      const doStr   = item.dofollow === true || String(item.dofollow).toLowerCase() === 'tak' || item.dofollow === 1 ? '✓' : '—';
+      const doStr   = item.dofollow === true || String(item.dofollow).toLowerCase() === 'tak' || item.dofollow === 1 ? 'tak' : (String(item.dofollow).toLowerCase() === 'nie' ? 'nie' : 'brak');
+      const dofCell = doStr === 'tak'
+        ? `<span style="color:var(--success);font-size:15px;font-weight:700">✓</span>`
+        : doStr === 'nie'
+          ? `<span style="color:var(--danger);font-size:14px;font-weight:700;text-decoration:line-through;opacity:0.85">✕</span>`
+          : `<span style="color:var(--text-3)">—</span>`;
       const isSM    = item.type === 'Social Media';
       const accBtn  = isSM ? `<span class="accounts-btn" onclick="openAccountsModal('${escAttr(item.id)}','${escAttr(item.url)}','${escAttr(item.name||'')}')">👤 Konta</span>` : '';
       const favicon = getFavicon(item.url);
@@ -2122,7 +2133,7 @@
         <td>${badge}</td>
         <td class="td-num">${item.da || '—'}</td>
         <td class="td-num">${item.dr || '—'}</td>
-        <td class="td-num" style="color:var(--${doStr==='✓'?'success':'text-3'})">${doStr}</td>
+        <td class="td-num" style="text-align:center">${dofCell}</td>
         <td class="td-date">${item.lastCheck || '—'}</td>
         <td style="white-space:nowrap">
           <div style="display:flex;align-items:center;gap:6px">
@@ -2519,20 +2530,44 @@
   }
 
   function checkDuplicateUrl(val) {
-    const dup    = document.getElementById('ff-url-dup');
+    const dup     = document.getElementById('ff-url-dup');
     const dupName = document.getElementById('ff-url-dup-name');
     if (!dup || !val || val.length < 5) { if(dup) dup.style.display='none'; return; }
     const norm = val.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+
+    // Check baza
     const found = allPlacesRaw.find(r => {
       const ex = String(r[1]||'').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
       return ex === norm;
     });
     if (found) {
       dup.style.display = '';
-      dupName.textContent = found[2] || found[1];
-    } else {
-      dup.style.display = 'none';
+      dup.style.background = 'rgba(245,158,11,0.1)';
+      dup.style.borderColor = 'rgba(245,158,11,0.3)';
+      dup.style.color = '#D97706';
+      dup.firstChild.textContent = '';
+      dupName.textContent = '';
+      dup.innerHTML = `⚠️ Ta domena już istnieje w bazie: <strong>${escHtml(found[2]||found[1])}</strong>`;
+      return;
     }
+
+    // Check pending verifications
+    const pending = allVerifRaw.find(r => {
+      const status = r[8] || '';
+      if (status !== 'do_weryfikacji' && status !== 'czeka_na_akceptacje') return false;
+      const ex = String(r[1]||'').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+      return ex === norm;
+    });
+    if (pending) {
+      dup.style.display = '';
+      dup.style.background = 'rgba(59,123,255,0.08)';
+      dup.style.borderColor = 'rgba(59,123,255,0.25)';
+      dup.style.color = '#60A5FA';
+      dup.innerHTML = `ℹ️ Domena zgłoszona, oczekuje na akceptację (zgłosił: <strong>${escHtml(pending[9]||'—')}</strong>)`;
+      return;
+    }
+
+    dup.style.display = 'none';
   }
 
   function setFormMode(mode) {
@@ -2635,8 +2670,10 @@
     if (formType === 'Profile' && !kategoria) { alert('Wybierz kategorię tematyczną.'); return; }
     if (isChecked && !linkDo) { alert('Podaj link do dodanego linku — to pole jest wymagane przy miejscówce sprawdzonej.'); return; }
 
-    // Check for duplicate URL
+    // Check for duplicate URL — in baza and in pending verifications
     const normalizedUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+
+    // Check baza_miejsc_lb
     const duplicate = allPlacesRaw.find(r => {
       const existing = String(r[1]||'').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
       return existing === normalizedUrl;
@@ -2645,6 +2682,20 @@
       const dupName = duplicate[2] || duplicate[1];
       const proceed = confirm(`⚠️ Ta domena już znajduje się w bazie jako "${dupName}".\n\nCzy chcesz mimo to dodać ją ponownie?`);
       if (!proceed) return;
+    }
+
+    // Check weryfikacja — pending (do_weryfikacji or czeka_na_akceptacje)
+    if (!duplicate) {
+      const pending = allVerifRaw.find(r => {
+        const status = r[8] || '';
+        if (status !== 'do_weryfikacji' && status !== 'czeka_na_akceptacje') return false;
+        const existing = String(r[1]||'').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+        return existing === normalizedUrl;
+      });
+      if (pending) {
+        alert(`ℹ️ Domena zgłoszona, oczekuje na akceptację.\n\nTa domena została już wcześniej zgłoszona przez ${pending[9]||'innego użytkownika'} i oczekuje na zatwierdzenie przez administratora.`);
+        return;
+      }
     }
 
     const btn = document.getElementById('form-submit-btn');
