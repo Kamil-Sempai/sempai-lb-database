@@ -390,6 +390,28 @@
     .refresh-bar{height:3px;background:var(--border);overflow:hidden;border-radius:0}
     .refresh-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#7C3AED);width:0%;transition:width 0.2s linear;border-radius:99px}
 
+    /* ── TABLE ROW SELECTION (delete) ──────────── */
+    .td-cb{width:32px;padding:0 8px 0 4px!important;vertical-align:middle}
+    .row-cb{width:15px;height:15px;border:1.5px solid var(--border);border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all var(--t);background:transparent;flex-shrink:0;vertical-align:middle}
+    .row-cb.checked{background:var(--danger);border-color:var(--danger)}
+    .row-cb.checked::after{content:'✓';font-size:9px;color:#fff;font-weight:700}
+    tr:hover .row-cb{border-color:var(--border-2)}
+    .th-cb{width:32px;padding:0 8px 0 4px!important}
+
+    /* Delete action bar */
+    .del-action-bar{
+      position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+      background:#1A0505;border:1px solid rgba(239,68,68,0.3);
+      border-radius:var(--r-xl);padding:12px 20px;
+      display:flex;align-items:center;gap:14px;
+      box-shadow:0 8px 32px rgba(239,68,68,0.15);
+      transition:transform 0.3s cubic-bezier(0.22,1,0.36,1);
+      z-index:200;pointer-events:none;
+    }
+    .del-action-bar.show{transform:translateX(-50%) translateY(0);pointer-events:all}
+    .del-action-count{font-size:13px;font-weight:600;color:#FCA5A5}
+    .del-action-count span{color:#F87171}
+
     /* ── COMMENTS ───────────────────────────────── */
     .comment-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);color:#818CF8;cursor:pointer;transition:all var(--t);white-space:nowrap;font-family:var(--font)}
     .comment-btn:hover{background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.4);color:#A5B4FC}
@@ -1116,6 +1138,16 @@
   </div>
 </div>
 
+<!-- DELETE SELECTION ACTION BAR -->
+<div class="del-action-bar" id="del-action-bar">
+  <div class="del-action-count">Zaznaczono: <span id="del-sel-count">0</span> miejsc</div>
+  <button class="btn btn-ghost btn-sm" onclick="clearPlaceSelection()" style="color:var(--text-2)">Odznacz</button>
+  <button class="btn btn-sm" onclick="deleteSelected()" style="background:var(--danger);color:#fff;border:none">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+    Usuń zaznaczone
+  </button>
+</div>
+
 <!-- MONITORING SELECTION ACTION BAR -->
 <div class="mon-action-bar" id="mon-action-bar">
   <div class="mon-action-count">Zaznaczono: <span id="mon-sel-count">0</span></div>
@@ -1535,8 +1567,11 @@
       const bw=document.getElementById('badge-wer');
       if(bw){bw.textContent=stats.pending;bw.classList.toggle('hidden',!stats.pending);}
 
-      // Small pause so step 3 is visible
-      await new Promise(r=>setTimeout(r,300));
+      // Preload comment counts (parallel with pause)
+      await Promise.all([
+        preloadCommentCounts(),
+        new Promise(r=>setTimeout(r,300))
+      ]);
 
       // All data ready — NOW show the app and render table
       dls.classList.add('hide');
@@ -1575,6 +1610,7 @@
       allTypes=types; allPlacesRaw=placeRows;
       populateTypeFilter(types);
       renderStats(stats);
+      await preloadCommentCounts();
       renderFilteredPlaces();
       const bw=document.getElementById('badge-wer');
       if(bw){bw.textContent=stats.pending;bw.classList.toggle('hidden',!stats.pending);}
@@ -2030,6 +2066,11 @@
       return;
     }
 
+    const isAdminUser = sessionStorage.getItem('sld_role')==='admin' && viewMode==='admin';
+    // Show/hide checkbox column header
+    const thCb = document.getElementById('th-cb');
+    if (thCb) thCb.style.display = isAdminUser ? '' : 'none';
+
     const rows = data.items.map(item => {
       const badge   = statusBadge(item.code, item.status);
       const doStr   = item.dofollow === true || String(item.dofollow).toLowerCase() === 'tak' || item.dofollow === 1 ? '✓' : '—';
@@ -2039,7 +2080,12 @@
       const favImg  = favicon ? `<img src="${favicon}" width="16" height="16" style="border-radius:3px;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:7px" onerror="this.remove()">` : '';
       const rowId   = 'row-' + escAttr(item.id);
       const cmtId   = 'cmt-' + escAttr(item.id);
-      return `<tr id="${rowId}">
+      const isSel   = placeSelected.has(String(item.id));
+      const cbCell  = isAdminUser ? `<td class="td-cb"><div class="row-cb ${isSel?'checked':''}" id="pcb-${escAttr(item.id)}" onclick="togglePlaceRow('${escAttr(item.id)}',event)"></div></td>` : '';
+      const cmtLabel = getCommentLabel(item.id);
+      const cmtClass = getCommentBtnClass(item.id);
+      return `<tr id="${rowId}" ${isSel?'style="background:rgba(239,68,68,0.04)"':''}>
+        ${cbCell}
         <td class="td-url">
           <div style="display:flex;align-items:flex-start">
             <span style="margin-top:2px;flex-shrink:0">${favImg}</span>
@@ -2056,9 +2102,9 @@
         <td class="td-num" style="color:var(--${doStr==='✓'?'success':'text-3'})">${doStr}</td>
         <td class="td-date">${item.lastCheck || '—'}</td>
         <td>
-          <button class="comment-btn" id="cbtn-${escAttr(item.id)}" onclick="toggleComments('${escAttr(item.id)}','${escAttr(item.url)}')">
+          <button class="${cmtClass}" id="cbtn-${escAttr(item.id)}" onclick="toggleComments('${escAttr(item.id)}','${escAttr(item.url)}')">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            <span id="cbtn-label-${escAttr(item.id)}">Komentarze</span>
+            <span id="cbtn-label-${escAttr(item.id)}">${cmtLabel}</span>
           </button>
         </td>
       </tr>
@@ -2080,6 +2126,9 @@
         <div class="table-scroll">
           <table class="data-table">
             <thead><tr>
+              <th class="th-cb" id="th-cb" style="display:none">
+                <div class="row-cb" id="th-cb-box" onclick="toggleSelectAllPlaces()" title="Zaznacz wszystkie"></div>
+              </th>
               <th>URL / Nazwa</th>
               <th>Typ</th>
               <th>Status</th>
@@ -2199,8 +2248,10 @@
 
       // Update button count
       const count = rows.length;
+      commentCounts[String(placeId)] = count; // keep in sync
       if (label) label.textContent = count > 0 ? `${count} ${count===1?'komentarz':count<5?'komentarze':'komentarzy'}` : 'Komentarze';
       if (btn && count > 0) btn.classList.add('has-comments');
+      else if (btn) btn.classList.remove('has-comments');
 
       renderCommentList(inner, placeId, url, rows);
     } catch(err) {
@@ -2320,6 +2371,95 @@
     await loadComments(placeId, url);
   }
 
+  /* ── PLACE SELECTION & DELETE (admin) ────────── */
+  const placeSelected = new Set();
+
+  function togglePlaceRow(id, event) {
+    event?.stopPropagation();
+    const sid = String(id);
+    if (placeSelected.has(sid)) placeSelected.delete(sid);
+    else placeSelected.add(sid);
+    const cb  = document.getElementById('pcb-'+id);
+    const row = document.getElementById('row-'+id);
+    if (cb)  cb.classList.toggle('checked', placeSelected.has(sid));
+    if (row) row.style.background = placeSelected.has(sid) ? 'rgba(239,68,68,0.04)' : '';
+    updatePlaceSelBar();
+  }
+
+  function toggleSelectAllPlaces() {
+    const allIds = allPlacesRaw.filter(r=>r[1]).map(r=>String(r[0]));
+    const allChecked = allIds.every(id => placeSelected.has(id));
+    if (allChecked) allIds.forEach(id => placeSelected.delete(id));
+    else allIds.forEach(id => placeSelected.add(id));
+    renderFilteredPlaces();
+  }
+
+  function clearPlaceSelection() {
+    placeSelected.clear();
+    renderFilteredPlaces();
+  }
+
+  function updatePlaceSelBar() {
+    const bar   = document.getElementById('del-action-bar');
+    const count = document.getElementById('del-sel-count');
+    const n = placeSelected.size;
+    if (count) count.textContent = n;
+    if (bar)   bar.classList.toggle('show', n > 0);
+    const thBox = document.getElementById('th-cb-box');
+    if (thBox) {
+      const allIds = allPlacesRaw.filter(r=>r[1]).map(r=>String(r[0]));
+      thBox.classList.toggle('checked', allIds.length > 0 && allIds.every(id => placeSelected.has(id)));
+    }
+  }
+
+  async function deleteSelected() {
+    const ids = [...placeSelected];
+    if (!ids.length) return;
+    const n = ids.length;
+    if (!confirm(`Usunąć ${n} zaznaczon${n===1?'ą':'ych'} miejscówk${n===1?'ę':'i'}? Tej operacji nie można cofnąć.`)) return;
+
+    const btn = document.querySelector('#del-action-bar button:last-child');
+    if (btn) { btn.disabled = true; btn.textContent = 'Usuwanie…'; }
+
+    const data = await callAPI('deletePlaces', { ids }, 'POST');
+
+    if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg> Usuń zaznaczone`; }
+
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+
+    placeSelected.clear();
+    showToast(`✅ Usunięto ${data.deleted||n} miejscówek`, 'success');
+    await refreshDataInBackground();
+    renderFilteredPlaces();
+  }
+
+  /* ── COMMENT COUNTS PRELOAD ───────────────────── */
+  let commentCounts = {}; // placeId → count
+
+  async function preloadCommentCounts() {
+    try {
+      const values = await readSheet('komentarze!A:B');
+      const counts = {};
+      values.slice(1).forEach(r => {
+        if (!r[0] || !r[1]) return;
+        const pid = String(r[1]);
+        counts[pid] = (counts[pid]||0) + 1;
+      });
+      commentCounts = counts;
+    } catch(_) { commentCounts = {}; }
+  }
+
+  function getCommentLabel(placeId) {
+    const n = commentCounts[String(placeId)] || 0;
+    if (!n) return 'Komentarze';
+    return `${n} ${n===1?'komentarz':n<5?'komentarze':'komentarzy'}`;
+  }
+
+  function getCommentBtnClass(placeId) {
+    const n = commentCounts[String(placeId)] || 0;
+    return n > 0 ? 'comment-btn has-comments' : 'comment-btn';
+  }
+
   /* ── FORM (ETAP 3) ────────────────────────────── */
   let formMode     = 'checked';
   let formType     = '';
@@ -2350,6 +2490,8 @@
     formMode = mode;
     document.getElementById('mode-btn-checked').classList.toggle('active', mode === 'checked');
     document.getElementById('mode-btn-unchecked').classList.toggle('active', mode === 'unchecked');
+    // If type already selected — re-render fields for new mode
+    if (formType) renderFormFields(formType);
   }
 
   function setFormType(type) {
