@@ -757,14 +757,18 @@
     <div class="dl-steps">
       <div class="dl-step" id="dl-step-0">
         <div class="dl-dot" id="dl-dot-0">1</div>
-        <span>Weryfikacja uprawnień</span>
+        <span>Łączenie z Apps Script</span>
       </div>
       <div class="dl-step" id="dl-step-1">
         <div class="dl-dot" id="dl-dot-1">2</div>
-        <span>Pobieranie bazy miejsc</span>
+        <span>Weryfikacja uprawnień</span>
       </div>
       <div class="dl-step" id="dl-step-2">
         <div class="dl-dot" id="dl-dot-2">3</div>
+        <span>Pobieranie bazy miejsc</span>
+      </div>
+      <div class="dl-step" id="dl-step-3">
+        <div class="dl-dot" id="dl-dot-3">4</div>
         <span>Przygotowanie widoku</span>
       </div>
     </div>
@@ -1222,17 +1226,17 @@
               <div class="mig-step-header">
                 <div class="mig-step-num done" id="mig-num-3">3</div>
                 <div>
-                  <div class="mig-step-title">Pobierz nowy plik narzędzia</div>
-                  <div class="mig-step-desc">Gotowy <code style="background:var(--bg-input);padding:2px 5px;border-radius:4px;font-size:11px">index.html</code> z zaktualizowanym ID arkusza. Wgraj go na GitHub zamiast obecnego.</div>
+                  <div class="mig-step-title">Zmień arkusz w ustawieniach</div>
+                  <div class="mig-step-desc">Dane skopiowane. Teraz przejdź do <strong>Ustawienia → ID arkusza</strong> i wklej ID nowego arkusza. Narzędzie od razu przełączy się na nowe dane — bez żadnych zmian w plikach.</div>
                 </div>
               </div>
               <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
                 <button class="btn btn-primary" id="mig-download-btn" onclick="migDownload()" disabled>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Pobierz zaktualizowany index.html
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+                  Zakończ migrację
                 </button>
                 <div id="mig-done-msg" style="display:none;font-size:13px;color:var(--success);align-self:center">
-                  ✅ Migracja zakończona! Wgraj plik na GitHub i zaktualizuj Apps Script.
+                  ✅ Przejdź do Ustawienia i zmień ID arkusza!
                 </div>
               </div>
             </div>
@@ -1259,8 +1263,15 @@
               </div>
             </div>
             <div class="settings-row" style="border-bottom:none">
-              <div><div class="settings-label">ID arkusza Google Sheets</div><div class="settings-desc">Aktualnie skonfigurowany arkusz z danymi.</div></div>
-              <div style="font-size:12px;color:var(--text-3);font-family:monospace;word-break:break-all;max-width:300px;text-align:right" id="setting-sheet-id">—</div>
+              <div><div class="settings-label">ID arkusza Google Sheets</div><div class="settings-desc">Aktualnie skonfigurowany arkusz. Zmień na nowy po migracji danych.</div></div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                <div style="font-size:11px;color:var(--text-3);font-family:monospace;word-break:break-all;max-width:300px;text-align:right" id="setting-sheet-id">—</div>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <input class="field-input" id="setting-new-sheet-id" placeholder="Wklej ID nowego arkusza" style="width:220px;font-size:12px;font-family:monospace">
+                  <button class="btn btn-primary btn-sm" onclick="changeSpreadsheet()">Zmień arkusz</button>
+                </div>
+                <div style="font-size:11px;color:var(--text-3)">Nowy arkusz musi być udostępniony do edycji dla konta hostującego Apps Script.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1415,8 +1426,8 @@
   const CLIENT_ID       = '287347548251-rp82vva0lt7i4rmjpnss3tca9dhuutf3.apps.googleusercontent.com';
   const ALLOWED_DOMAIN  = 'sempai.pl';
   const ADMIN_EMAILS    = ['kamil.zalewski@sempai.pl'];
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkiZM6kfRyG0UXVF-Rmkk9ZjK-Upt5fR0aiJQC_lehhKBY8VLhQ_9kO1CDMhHtzZSatg/exec';
-  const SPREADSHEET_ID  = '1mZG_JofdxPuCHZjDuUF1vHTH2204SZ4XYtGZiS3ad7M';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEbD32lLfQ53zmZ2aNJA7fH5BzT3cqncLgaFUagU79atE2pYgWXFjJoximwtVMWCMkrA/exec';
+  let   SPREADSHEET_ID  = ''; // loaded dynamically from Apps Script on login
   const THEME_KEY      = 'sld_theme';
   const SESSION_KEY    = 'sld_user';
   const FOLDER_KEY     = 'sld_folder';
@@ -1797,15 +1808,25 @@
   async function loadDataThenShowApp(user, isAdmin) {
     const dls=document.getElementById('data-loading-screen');
     try {
-      // Step 1: check role
+      // Step 1: get spreadsheet ID from Apps Script (dynamic — no hardcoding needed)
       dlStep(0);
-      const role = await loadUserRole(user.email).catch(()=>isAdmin?'admin':'user');
+      const idData = await Promise.race([
+        callAPI('getSpreadsheetId'),
+        new Promise((_,rej) => setTimeout(()=>rej(new Error('Apps Script nie odpowiada (timeout)')), 20000))
+      ]);
+      if (!idData || idData.error) throw new Error('Nie można pobrać ID arkusza: ' + (idData?.error||'brak odpowiedzi'));
+      SPREADSHEET_ID = idData.id;
+      console.log('[LB] Spreadsheet:', idData.title, '(' + SPREADSHEET_ID + ')');
+
+      // Step 2: check role
+      dlStep(1);
+      const role = await loadUserRole(user.email).catch(()=>isAdmin?'super_admin':'user');
       sessionStorage.setItem('sld_role', role);
       applyRole(role);
-      const pr=document.getElementById('prof-role');if(pr)pr.textContent=role==='admin'?'Administrator':'Specjalista SEO';
+      const pr=document.getElementById('prof-role');if(pr)pr.textContent=role;
 
-      // Step 2: fetch data
-      dlStep(1);
+      // Step 3: fetch data
+      dlStep(2);
       const cached=getCached();
       let types, placeRows, stats;
 
@@ -1828,8 +1849,8 @@
         saveCache({types, places:placeRows, stats});
       }
 
-      // Step 3: prepare view
-      dlStep(2);
+      // Step 4: prepare view
+      dlStep(3);
       allTypes=types; allPlacesRaw=placeRows;
       populateTypeFilter(types);
       renderStats(stats);
@@ -2107,7 +2128,7 @@
   }
 
   /* Progress loader helpers */
-  const STEPS = ['Łączenie z Google Sheets…', 'Pobieranie danych…', 'Renderowanie tabeli…'];
+  const STEPS = ['Łączenie z Apps Script…', 'Weryfikacja uprawnień…', 'Pobieranie bazy miejsc…', 'Przygotowanie widoku…'];
 
   function showProgressLoader(container) {
     container.innerHTML = `
@@ -2881,26 +2902,11 @@
   }
 
   function migDownload() {
-    if (!migNewId) return;
-    // Read current index.html, replace SPREADSHEET_ID
-    fetch(window.location.href)
-      .then(r => r.text())
-      .then(html => {
-        const updated = html.replace(
-          `const SPREADSHEET_ID  = '${SPREADSHEET_ID}'`,
-          `const SPREADSHEET_ID  = '${migNewId}'`
-        );
-        const blob = new Blob([updated], { type: 'text/html' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href     = url;
-        a.download = 'index.html';
-        a.click();
-        URL.revokeObjectURL(url);
-        document.getElementById('mig-done-msg').style.display = 'flex';
-        showToast('✅ Plik pobrany — wgraj na GitHub!', 'success', 6000);
-      })
-      .catch(() => alert('Błąd pobierania pliku. Odśwież stronę i spróbuj ponownie.'));
+    // index.html no longer contains SPREADSHEET_ID — it's fetched dynamically from Apps Script.
+    // After migrating data, just change the spreadsheet via Settings → Zmień arkusz.
+    // No file download needed!
+    document.getElementById('mig-done-msg').style.display = 'flex';
+    showToast('✅ Dane skopiowane! Zmień arkusz w Ustawienia → ID arkusza.', 'success', 8000);
   }
 
   /* ── ADMIN PANEL ──────────────────────────────── */
@@ -3097,11 +3103,30 @@
   async function loadAdminSettings() {
     const data = await callAPI('getSettings');
     if (!data || data.error) { showToast('⚠️ Brak dostępu do ustawień (tylko Super Admin)', 'error'); return; }
-    if (data.domain)     { const el = document.getElementById('setting-domain');     if (el) el.value = data.domain; }
     if (data.admins)     { const el = document.getElementById('setting-admins');     if (el) el.value = data.admins; }
     if (data.exceptions !== undefined) { const el = document.getElementById('setting-exceptions'); if (el) el.value = data.exceptions; }
+    // Show current spreadsheet ID (dynamic from Apps Script)
     const sheetEl = document.getElementById('setting-sheet-id');
-    if (sheetEl) sheetEl.textContent = SPREADSHEET_ID;
+    if (sheetEl) sheetEl.textContent = SPREADSHEET_ID || 'Ładowanie…';
+  }
+
+  async function changeSpreadsheet() {
+    const newId = document.getElementById('setting-new-sheet-id')?.value.trim();
+    if (!newId) { alert('Wklej ID nowego arkusza.'); return; }
+    if (newId === SPREADSHEET_ID) { alert('To jest już aktywny arkusz.'); return; }
+    if (!confirm(`Zmienić arkusz na: ${newId}?\n\nUpewnij się że dane zostały już skopiowane przez Migrację danych.`)) return;
+
+    const data = await callAPI('setSpreadsheetId', { newId }, 'POST');
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nie można zmienić arkusza')); return; }
+
+    SPREADSHEET_ID = newId;
+    document.getElementById('setting-sheet-id').textContent = newId;
+    document.getElementById('setting-new-sheet-id').value = '';
+
+    // Invalidate cache and reload data from new spreadsheet
+    localStorage.removeItem(DATA_KEY);
+    showToast('✅ Arkusz zmieniony! Przeładowuję dane…', 'success', 5000);
+    setTimeout(() => refreshDataInBackground(), 1000);
   }
 
   async function saveSetting(key) {
