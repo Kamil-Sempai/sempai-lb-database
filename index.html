@@ -403,9 +403,6 @@
     .row-action-btn.edit:hover{background:rgba(59,123,255,0.1);border-color:rgba(59,123,255,0.3);color:var(--accent)}
     .row-action-btn.del{color:var(--text-3)}
     .row-action-btn.del:hover{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--danger)}
-    .report-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all var(--t);flex-shrink:0;color:var(--text-3)}
-    .report-btn:hover{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#D97706}
-    .report-btn.has-report{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#D97706}
     .rs-nowe{background:rgba(245,158,11,0.1);color:#D97706;border:1px solid rgba(245,158,11,0.25);padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
     .rs-rozwiazano{background:rgba(16,185,129,0.1);color:#059669;border:1px solid rgba(16,185,129,0.25);padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
     .rs-usunieto{background:rgba(239,68,68,0.1);color:#DC2626;border:1px solid rgba(239,68,68,0.25);padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
@@ -530,8 +527,10 @@
     .comment-input:focus{border-color:var(--accent)}
     .comment-input::placeholder{color:var(--text-3)}
 
-    .report-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:600;background:transparent;border:1px solid var(--border);color:var(--text-3);cursor:pointer;transition:all var(--t);white-space:nowrap;font-family:var(--font)}
-    .report-btn:hover{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.35);color:#D97706}
+    .report-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);color:#D97706;cursor:pointer;transition:all var(--t);white-space:nowrap;font-family:var(--font)}
+    .report-btn:hover{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.45);color:#B45309}
+    [data-theme="dark"] .report-btn{color:#FBB040;background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3)}
+    [data-theme="dark"] .report-btn:hover{background:rgba(245,158,11,0.18);border-color:rgba(245,158,11,0.5)}
 
     /* ── MONITORING ─────────────────────────────── */
     .mon-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
@@ -1467,7 +1466,7 @@
   const CLIENT_ID       = '287347548251-rp82vva0lt7i4rmjpnss3tca9dhuutf3.apps.googleusercontent.com';
   const ALLOWED_DOMAIN  = 'sempai.pl';
   const ADMIN_EMAILS    = ['kamil.zalewski@sempai.pl'];
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAqLMFFNf4gAEnZSnHqvsq05xmPgkrJZ0inPu2kExbqmjbumtCk0NjrHnq5FkR2X98YA/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkiZM6kfRyG0UXVF-Rmkk9ZjK-Upt5fR0aiJQC_lehhKBY8VLhQ_9kO1CDMhHtzZSatg/exec';
   let   SPREADSHEET_ID  = ''; // loaded dynamically from Apps Script on login
   const THEME_KEY      = 'sld_theme';
   const SESSION_KEY    = 'sld_user';
@@ -3546,125 +3545,6 @@
     document.getElementById('mode-btn-checked').classList.add('active');
     document.getElementById('mode-btn-unchecked').classList.remove('active');
   }
-
-  /* ── REPORTS ──────────────────────────────────── */
-
-  function openReportModal(placeId, url, name, event) {
-    event?.stopPropagation();
-    const existing = document.getElementById('report-modal');
-    if (existing) existing.remove();
-
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay show';
-    modal.id = 'report-modal';
-    modal.innerHTML = `<div class="modal-box" style="max-width:480px">
-      <div class="modal-head">
-        <div class="modal-icon-wrap" style="background:rgba(245,158,11,0.15)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-        </div>
-        <h2 class="modal-title">Zgłoś problem z miejscówką</h2>
-        <p class="modal-sub">
-          <a href="${escHtml(url)}" target="_blank" style="color:var(--accent)">${escHtml(name||url)}</a>
-        </p>
-      </div>
-      <div class="modal-body">
-        <div class="field-row">
-          <div class="field-label">Opis problemu <span style="color:var(--danger)">*</span></div>
-          <textarea class="field-textarea" id="report-note" rows="4"
-            placeholder="Opisz co się zmieniło lub nie działa, np.:&#10;- Portal wyłączył możliwość dodawania linków w treści&#10;- Zmienił się regulamin, linki są teraz nofollow&#10;- Strona jest niedostępna od kilku dni"></textarea>
-        </div>
-      </div>
-      <div class="modal-foot">
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('report-modal').remove()">Anuluj</button>
-        <button class="btn btn-sm" onclick="submitReport('${escAttr(placeId)}','${escAttr(url)}','${escAttr(name||'')}',this)"
-          style="background:#D97706;color:#fff;border:none;font-family:var(--font);font-weight:600;padding:8px 16px;border-radius:var(--r);cursor:pointer;font-size:13px">
-          🚩 Wyślij zgłoszenie
-        </button>
-      </div>
-    </div>`;
-    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
-    document.body.appendChild(modal);
-    setTimeout(() => document.getElementById('report-note')?.focus(), 100);
-  }
-
-  async function submitReport(placeId, url, name, btn) {
-    const note = document.getElementById('report-note')?.value.trim();
-    if (!note) { alert('Opisz problem przed wysłaniem zgłoszenia.'); return; }
-
-    btn.disabled = true; btn.textContent = 'Wysyłanie…';
-    const data = await callAPI('addReport', { placeId, placeUrl: url, placeName: name, note }, 'POST');
-    btn.disabled = false;
-
-    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
-
-    document.getElementById('report-modal')?.remove();
-    reportedIds.add(String(placeId));
-    // Update report button visual
-    const rb = document.querySelector(`.report-btn[onclick*="'${placeId}'"]`);
-    if (rb) rb.classList.add('has-report');
-    showToast('✅ Zgłoszenie wysłane — administratorzy zostaną powiadomieni.', 'success', 5000);
-  }
-
-  async function loadReports() {
-    const container = document.getElementById('verif-container');
-    if (!container) return;
-    container.innerHTML = '<div class="verif-empty"><div class="verif-empty-icon">⏳</div>Ładowanie zgłoszeń…</div>';
-
-    const data = await callAPI('getReports');
-    if (!data || data.error) { container.innerHTML = `<div class="verif-empty"><div class="verif-empty-icon">⚠️</div>${escHtml(data?.error||'Błąd')}</div>`; return; }
-
-    const active = data.reports.filter(r => r.status === 'nowe');
-    const done   = data.reports.filter(r => r.status !== 'nowe');
-
-    // Update badge
-    const cr = document.getElementById('vcount-reports');
-    if (cr) { cr.textContent = active.length; cr.classList.toggle('hidden', !active.length); }
-
-    if (!data.reports.length) {
-      container.innerHTML = '<div class="verif-empty"><div class="verif-empty-icon">🚩</div>Brak zgłoszeń.</div>';
-      return;
-    }
-
-    const renderReport = r => {
-      const isDone = r.status !== 'nowe';
-      const statusHtml = isDone
-        ? `<span class="rs-${r.status}">${r.status === 'rozwiazano' ? 'Rozwiązano' : 'Usunięto z bazy'}</span>`
-        : '';
-      return `<div class="verif-card" id="rcard-${escAttr(r.id)}">
-        <div class="verif-card-head">
-          <div style="flex:1;min-width:0">
-            <a class="verif-url" href="${escHtml(r.placeUrl)}" target="_blank" rel="noopener">${escHtml(r.placeName||r.placeUrl)}</a>
-            <div class="verif-meta">${escHtml(r.placeUrl)} · Zgłosił: ${escHtml(r.name||r.email)} · ${escHtml(r.date)}</div>
-          </div>
-          ${statusHtml}
-        </div>
-        ${!isDone ? `<div class="verif-card-body">
-          <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--text-2);margin-bottom:14px;line-height:1.6">
-            <strong style="color:#D97706">Problem:</strong> ${escHtml(r.note)}
-          </div>
-          <div class="verif-actions">
-            <button class="btn btn-primary btn-sm" onclick="resolveReport('${escAttr(r.id)}','resolve')">✓ Rozwiązano — zostaje w bazie</button>
-            <button class="btn btn-danger btn-sm" onclick="resolveReport('${escAttr(r.id)}','delete_place')">✗ Usuń z bazy</button>
-          </div>
-        </div>` : ''}
-      </div>`;
-    };
-
-    container.innerHTML =
-      (active.length ? active.map(renderReport).join('') : '<div class="verif-empty" style="margin-bottom:16px"><div class="verif-empty-icon">✅</div>Wszystkie zgłoszenia rozpatrzone.</div>') +
-      (done.length ? `<div style="margin-top:20px;font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Rozpatrzone</div>${done.map(renderReport).join('')}` : '');
-  }
-
-  async function resolveReport(id, action) {
-    const label = action === 'delete_place' ? 'Usunąć miejscówkę z bazy?' : 'Oznaczyć zgłoszenie jako rozwiązane?';
-    if (!confirm(label)) return;
-    const data = await callAPI('resolveReport', { id, action }, 'POST');
-    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
-    showToast(action === 'delete_place' ? '✅ Miejscówka usunięta z bazy' : '✅ Zgłoszenie rozwiązane', 'success');
-    if (action === 'delete_place') await refreshDataInBackground();
-    loadReports();
-  }
-
   /* ── VERIFICATION ─────────────────────────────── */
   let verifData    = null;
   let currentVerifTab = 'pending';
