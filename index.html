@@ -403,6 +403,12 @@
     .row-action-btn.edit:hover{background:rgba(59,123,255,0.1);border-color:rgba(59,123,255,0.3);color:var(--accent)}
     .row-action-btn.del{color:var(--text-3)}
     .row-action-btn.del:hover{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--danger)}
+    .report-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all var(--t);flex-shrink:0;color:var(--text-3)}
+    .report-btn:hover{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#D97706}
+    .report-btn.has-report{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#D97706}
+    .rs-nowe{background:rgba(245,158,11,0.1);color:#D97706;border:1px solid rgba(245,158,11,0.25);padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
+    .rs-rozwiazano{background:rgba(16,185,129,0.1);color:#059669;border:1px solid rgba(16,185,129,0.25);padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
+    .rs-usunieto{background:rgba(239,68,68,0.1);color:#DC2626;border:1px solid rgba(239,68,68,0.25);padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
 
     /* ── TABLE ROW SELECTION (delete) ──────────── */
     .td-cb{width:32px;padding:0 8px 0 4px!important;vertical-align:middle}
@@ -523,6 +529,9 @@
     .comment-input{flex:1;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:13px;color:var(--text-1);outline:none;resize:none;min-height:36px;max-height:100px;transition:border-color var(--t);line-height:1.5}
     .comment-input:focus{border-color:var(--accent)}
     .comment-input::placeholder{color:var(--text-3)}
+
+    .report-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:600;background:transparent;border:1px solid var(--border);color:var(--text-3);cursor:pointer;transition:all var(--t);white-space:nowrap;font-family:var(--font)}
+    .report-btn:hover{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.35);color:#D97706}
 
     /* ── MONITORING ─────────────────────────────── */
     .mon-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
@@ -1003,7 +1012,13 @@
           <button class="vtab" id="vtab-waiting" onclick="showVerifTab('waiting')" style="display:none">
             Czeka na akceptację <span class="vtab-count blue hidden" id="vcount-waiting">0</span>
           </button>
+          <button class="vtab" id="vtab-reports" onclick="showVerifTab('reports')" style="display:none">
+            🚩 Zgłoszenia <span class="vtab-count hidden" id="vcount-reports" style="background:#D97706">0</span>
+          </button>
           <button class="vtab" id="vtab-done" onclick="showVerifTab('done')" style="display:none">Zakończone</button>
+          <button class="vtab" id="vtab-reports" onclick="showVerifTab('reports')" style="display:none">
+            ⚠️ Zgłoszenia <span class="vtab-count hidden" id="vcount-reports" style="background:#D97706">0</span>
+          </button>
         </div>
         <div id="verif-container">
           <div class="verif-empty"><div class="verif-empty-icon">⏳</div>Ładowanie…</div>
@@ -1421,12 +1436,38 @@
   </button>
 </div>
 
+<!-- REPORT MODAL -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-head">
+      <div class="modal-icon-wrap" style="background:rgba(245,158,11,0.1)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <h2 class="modal-title">Zgłoś problem z miejscówką</h2>
+      <p class="modal-sub" id="report-modal-url" style="font-size:12px;color:var(--text-3)"></p>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field-label">Opis problemu <span style="color:var(--danger)">*</span></div>
+        <textarea class="field-textarea" id="report-desc" rows="4"
+          placeholder="Opisz co nie działa, np. portal usunął sekcję ogłoszeń, nie można dodać aktywnego linku, strona nie istnieje…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('report-modal')">Anuluj</button>
+      <button class="btn btn-sm" onclick="submitReport()" style="background:#D97706;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer">
+        Wyślij zgłoszenie
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
   /* ── CONFIG ───────────────────────────────────── */
   const CLIENT_ID       = '287347548251-rp82vva0lt7i4rmjpnss3tca9dhuutf3.apps.googleusercontent.com';
   const ALLOWED_DOMAIN  = 'sempai.pl';
   const ADMIN_EMAILS    = ['kamil.zalewski@sempai.pl'];
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAqLMFFNf4gAEnZSnHqvsq05xmPgkrJZ0inPu2kExbqmjbumtCk0NjrHnq5FkR2X98YA/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkiZM6kfRyG0UXVF-Rmkk9ZjK-Upt5fR0aiJQC_lehhKBY8VLhQ_9kO1CDMhHtzZSatg/exec';
   let   SPREADSHEET_ID  = ''; // loaded dynamically from Apps Script on login
   const THEME_KEY      = 'sld_theme';
   const SESSION_KEY    = 'sld_user';
@@ -1509,7 +1550,7 @@
       // Refresh verification panel tabs
       if (verifData) {
         const canV = verifData.canVerify && (mode==='admin'||mode==='weryfikator');
-        ['vtab-waiting','vtab-done'].forEach(id=>{
+        ['vtab-waiting','vtab-reports','vtab-done'].forEach(id=>{
           const el=document.getElementById(id);if(el)el.style.display=canV?'':'none';
         });
         if(!canV&&(currentVerifTab==='waiting'||currentVerifTab==='done')){
@@ -1521,7 +1562,7 @@
       }
     } else {
       if (verifData?.canVerify) {
-        ['vtab-waiting','vtab-done'].forEach(id=>{
+        ['vtab-waiting','vtab-reports','vtab-done'].forEach(id=>{
           const el=document.getElementById(id);if(el)el.style.display='';
         });
         renderVerifTab(currentVerifTab);
@@ -1860,6 +1901,7 @@
       // Preload comment counts (parallel with pause)
       await Promise.all([
         preloadCommentCounts(),
+        preloadReportedIds(),
         new Promise(r=>setTimeout(r,300))
       ]);
 
@@ -1900,7 +1942,7 @@
       allTypes=types; allPlacesRaw=placeRows;
       populateTypeFilter(types);
       renderStats(stats);
-      await preloadCommentCounts();
+      await Promise.all([preloadCommentCounts(), preloadReportedIds()]);
       renderFilteredPlaces();
       const bw=document.getElementById('badge-wer');
       if(bw){bw.textContent=stats.pending;bw.classList.toggle('hidden',!stats.pending);}
@@ -2420,6 +2462,10 @@
             <button class="row-action-btn del" onclick="deleteSinglePlace('${escAttr(item.id)}','${escAttr(item.name||item.url)}',event)" title="Usuń miejscówkę">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
             </button>` : ''}
+            <button class="report-btn" onclick="openReportModal('${escAttr(item.id)}','${escAttr(item.url)}','${escAttr(item.name||'')}',event)" title="Zgłoś problem z miejscówką">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Zgłoś
+            </button>
             <button class="${cmtClass}" id="cbtn-${escAttr(item.id)}" onclick="toggleComments('${escAttr(item.id)}','${escAttr(item.url)}')">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
               <span id="cbtn-label-${escAttr(item.id)}">${cmtLabel}</span>
@@ -2701,6 +2747,119 @@
     await loadComments(placeId, url);
   }
 
+  /* ── REPORTS ──────────────────────────────────── */
+  let currentReportPlaceId  = '';
+  let currentReportPlaceUrl = '';
+
+  function openReportModal(placeId, url, name, event) {
+    event?.stopPropagation();
+    currentReportPlaceId  = placeId;
+    currentReportPlaceUrl = url;
+    document.getElementById('report-modal-url').textContent = name ? `${name} — ${url}` : url;
+    document.getElementById('report-desc').value = '';
+    openModal('report-modal');
+    setTimeout(() => document.getElementById('report-desc')?.focus(), 100);
+  }
+
+  async function submitReport() {
+    const desc = document.getElementById('report-desc')?.value.trim();
+    if (!desc) { alert('Opisz problem zanim wyślesz zgłoszenie.'); return; }
+
+    const data = await callAPI('addReport', {
+      placeId: currentReportPlaceId,
+      placeUrl: currentReportPlaceUrl,
+      description: desc
+    }, 'POST');
+
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+    closeModal('report-modal');
+    showToast('✅ Zgłoszenie wysłane — dziękujemy!', 'success');
+  }
+
+  /* Reports in Weryfikacja tab */
+  let reportsData = [];
+
+  async function loadReports() {
+    const container = document.getElementById('verif-container');
+    if (!container) return;
+    container.innerHTML = '<div class="verif-empty"><div class="verif-empty-icon">⏳</div>Ładowanie zgłoszeń…</div>';
+    const data = await callAPI('getReports');
+    if (!data || data.error) { container.innerHTML = `<div class="verif-empty"><div class="verif-empty-icon">⚠️</div>${escHtml(data?.error||'Błąd')}</div>`; return; }
+    reportsData = data.reports || [];
+
+    // Update badge
+    const newReports = reportsData.filter(r => r.status === 'nowe');
+    const badge = document.getElementById('vcount-reports');
+    if (badge) { badge.textContent = newReports.length; badge.classList.toggle('hidden', !newReports.length); }
+
+    renderReports();
+  }
+
+  function renderReports() {
+    const container = document.getElementById('verif-container');
+    if (!container) return;
+    const active  = reportsData.filter(r => r.status === 'nowe');
+    const resolved = reportsData.filter(r => r.status !== 'nowe');
+
+    if (!reportsData.length) {
+      container.innerHTML = '<div class="verif-empty"><div class="verif-empty-icon">✅</div>Brak zgłoszeń.</div>';
+      return;
+    }
+
+    const renderCard = r => {
+      const isDone = r.status !== 'nowe';
+      const statusBadge = isDone
+        ? `<span class="verif-status-badge ${r.status==='usunięto'?'vs-rejected':'vs-approved'}">${r.status==='usunięto'?'Usunięto z bazy':'Zignorowano'}</span>`
+        : `<span class="verif-status-badge vs-pending">Nowe</span>`;
+
+      return `<div class="verif-card" id="rcard-${escAttr(r.id)}">
+        <div class="verif-card-head">
+          <div style="flex:1;min-width:0">
+            <a class="verif-url" href="${escHtml(r.placeUrl.startsWith('http')?r.placeUrl:'https://'+r.placeUrl)}" target="_blank" rel="noopener">${escHtml(r.placeUrl)}</a>
+            <div class="verif-meta">Zgłosił: ${escHtml(r.reporter||r.reporterEmail)} · ${escHtml(r.date)}</div>
+          </div>
+          ${statusBadge}
+        </div>
+        <div class="verif-card-body">
+          <div style="padding:10px 12px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:var(--r);font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:${isDone?'0':'12px'}">
+            <strong style="color:#D97706">⚠️ Problem:</strong> ${escHtml(r.description)}
+          </div>
+          ${!isDone ? `<div class="verif-actions">
+            <button class="btn btn-danger btn-sm" onclick="resolveReport('${escAttr(r.id)}','${escAttr(r.placeId)}','delete_place')">
+              🗑 Usuń miejscówkę z bazy
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="resolveReport('${escAttr(r.id)}','${escAttr(r.placeId)}','ignore')">
+              ✓ Ignoruj (chwilowy problem)
+            </button>
+          </div>` : ''}
+        </div>
+      </div>`;
+    };
+
+    let html = '';
+    if (active.length)   html += active.map(renderCard).join('');
+    if (resolved.length) html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);margin:16px 0 8px">Rozpatrzone</div>` + resolved.map(renderCard).join('');
+    container.innerHTML = html;
+  }
+
+  async function resolveReport(reportId, placeId, action) {
+    const confirmMsg = action === 'delete_place'
+      ? 'Usunąć tę miejscówkę z bazy? Operacji nie można cofnąć.'
+      : 'Oznaczyć zgłoszenie jako zignorowane?';
+    if (!confirm(confirmMsg)) return;
+
+    const data = await callAPI('resolveReport', { reportId, placeId, action }, 'POST');
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+
+    if (action === 'delete_place') {
+      showToast('✅ Miejscówka usunięta z bazy', 'success');
+      await refreshDataInBackground();
+    } else {
+      showToast('✅ Zgłoszenie zignorowane', 'success');
+    }
+    loadReports();
+  }
+
   /* ── PLACE SELECTION & DELETE (admin) ────────── */
   const placeSelected = new Set();
 
@@ -2765,6 +2924,7 @@
 
   /* ── COMMENT COUNTS PRELOAD ───────────────────── */
   let commentCounts = {}; // placeId → count
+  let reportedIds   = new Set(); // placeIds with active (nowe) reports
 
   async function preloadCommentCounts() {
     try {
@@ -2777,6 +2937,18 @@
       });
       commentCounts = counts;
     } catch(_) { commentCounts = {}; }
+  }
+
+  async function preloadReportedIds() {
+    try {
+      const values = await readSheet('zgloszenia!A:I');
+      const ids = new Set();
+      values.slice(1).forEach(r => {
+        // cols: ID(0) placeId(1) ... status(8)
+        if (r[1] && r[8] === 'nowe') ids.add(String(r[1]));
+      });
+      reportedIds = ids;
+    } catch(_) { reportedIds = new Set(); }
   }
 
   function getCommentLabel(placeId) {
@@ -3375,6 +3547,124 @@
     document.getElementById('mode-btn-unchecked').classList.remove('active');
   }
 
+  /* ── REPORTS ──────────────────────────────────── */
+
+  function openReportModal(placeId, url, name, event) {
+    event?.stopPropagation();
+    const existing = document.getElementById('report-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay show';
+    modal.id = 'report-modal';
+    modal.innerHTML = `<div class="modal-box" style="max-width:480px">
+      <div class="modal-head">
+        <div class="modal-icon-wrap" style="background:rgba(245,158,11,0.15)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        </div>
+        <h2 class="modal-title">Zgłoś problem z miejscówką</h2>
+        <p class="modal-sub">
+          <a href="${escHtml(url)}" target="_blank" style="color:var(--accent)">${escHtml(name||url)}</a>
+        </p>
+      </div>
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field-label">Opis problemu <span style="color:var(--danger)">*</span></div>
+          <textarea class="field-textarea" id="report-note" rows="4"
+            placeholder="Opisz co się zmieniło lub nie działa, np.:&#10;- Portal wyłączył możliwość dodawania linków w treści&#10;- Zmienił się regulamin, linki są teraz nofollow&#10;- Strona jest niedostępna od kilku dni"></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('report-modal').remove()">Anuluj</button>
+        <button class="btn btn-sm" onclick="submitReport('${escAttr(placeId)}','${escAttr(url)}','${escAttr(name||'')}',this)"
+          style="background:#D97706;color:#fff;border:none;font-family:var(--font);font-weight:600;padding:8px 16px;border-radius:var(--r);cursor:pointer;font-size:13px">
+          🚩 Wyślij zgłoszenie
+        </button>
+      </div>
+    </div>`;
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+    setTimeout(() => document.getElementById('report-note')?.focus(), 100);
+  }
+
+  async function submitReport(placeId, url, name, btn) {
+    const note = document.getElementById('report-note')?.value.trim();
+    if (!note) { alert('Opisz problem przed wysłaniem zgłoszenia.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Wysyłanie…';
+    const data = await callAPI('addReport', { placeId, placeUrl: url, placeName: name, note }, 'POST');
+    btn.disabled = false;
+
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+
+    document.getElementById('report-modal')?.remove();
+    reportedIds.add(String(placeId));
+    // Update report button visual
+    const rb = document.querySelector(`.report-btn[onclick*="'${placeId}'"]`);
+    if (rb) rb.classList.add('has-report');
+    showToast('✅ Zgłoszenie wysłane — administratorzy zostaną powiadomieni.', 'success', 5000);
+  }
+
+  async function loadReports() {
+    const container = document.getElementById('verif-container');
+    if (!container) return;
+    container.innerHTML = '<div class="verif-empty"><div class="verif-empty-icon">⏳</div>Ładowanie zgłoszeń…</div>';
+
+    const data = await callAPI('getReports');
+    if (!data || data.error) { container.innerHTML = `<div class="verif-empty"><div class="verif-empty-icon">⚠️</div>${escHtml(data?.error||'Błąd')}</div>`; return; }
+
+    const active = data.reports.filter(r => r.status === 'nowe');
+    const done   = data.reports.filter(r => r.status !== 'nowe');
+
+    // Update badge
+    const cr = document.getElementById('vcount-reports');
+    if (cr) { cr.textContent = active.length; cr.classList.toggle('hidden', !active.length); }
+
+    if (!data.reports.length) {
+      container.innerHTML = '<div class="verif-empty"><div class="verif-empty-icon">🚩</div>Brak zgłoszeń.</div>';
+      return;
+    }
+
+    const renderReport = r => {
+      const isDone = r.status !== 'nowe';
+      const statusHtml = isDone
+        ? `<span class="rs-${r.status}">${r.status === 'rozwiazano' ? 'Rozwiązano' : 'Usunięto z bazy'}</span>`
+        : '';
+      return `<div class="verif-card" id="rcard-${escAttr(r.id)}">
+        <div class="verif-card-head">
+          <div style="flex:1;min-width:0">
+            <a class="verif-url" href="${escHtml(r.placeUrl)}" target="_blank" rel="noopener">${escHtml(r.placeName||r.placeUrl)}</a>
+            <div class="verif-meta">${escHtml(r.placeUrl)} · Zgłosił: ${escHtml(r.name||r.email)} · ${escHtml(r.date)}</div>
+          </div>
+          ${statusHtml}
+        </div>
+        ${!isDone ? `<div class="verif-card-body">
+          <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--text-2);margin-bottom:14px;line-height:1.6">
+            <strong style="color:#D97706">Problem:</strong> ${escHtml(r.note)}
+          </div>
+          <div class="verif-actions">
+            <button class="btn btn-primary btn-sm" onclick="resolveReport('${escAttr(r.id)}','resolve')">✓ Rozwiązano — zostaje w bazie</button>
+            <button class="btn btn-danger btn-sm" onclick="resolveReport('${escAttr(r.id)}','delete_place')">✗ Usuń z bazy</button>
+          </div>
+        </div>` : ''}
+      </div>`;
+    };
+
+    container.innerHTML =
+      (active.length ? active.map(renderReport).join('') : '<div class="verif-empty" style="margin-bottom:16px"><div class="verif-empty-icon">✅</div>Wszystkie zgłoszenia rozpatrzone.</div>') +
+      (done.length ? `<div style="margin-top:20px;font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Rozpatrzone</div>${done.map(renderReport).join('')}` : '');
+  }
+
+  async function resolveReport(id, action) {
+    const label = action === 'delete_place' ? 'Usunąć miejscówkę z bazy?' : 'Oznaczyć zgłoszenie jako rozwiązane?';
+    if (!confirm(label)) return;
+    const data = await callAPI('resolveReport', { id, action }, 'POST');
+    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+    showToast(action === 'delete_place' ? '✅ Miejscówka usunięta z bazy' : '✅ Zgłoszenie rozwiązane', 'success');
+    if (action === 'delete_place') await refreshDataInBackground();
+    loadReports();
+  }
+
   /* ── VERIFICATION ─────────────────────────────── */
   let verifData    = null;
   let currentVerifTab = 'pending';
@@ -3393,10 +3683,16 @@
     updateVerifCounts(data);
     // Show extra tabs only for admin/weryfikator AND only when not in user viewMode
     const canV = data.canVerify && viewMode !== 'user';
-    ['vtab-waiting','vtab-done'].forEach(id => {
+    ['vtab-waiting','vtab-reports','vtab-done'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = canV ? '' : 'none';
     });
+    // Load reports badge in background
+    if (canV) callAPI('getReports').then(r => {
+      const newOnes = (r?.reports||[]).filter(x=>x.status==='nowe');
+      const badge = document.getElementById('vcount-reports');
+      if (badge) { badge.textContent=newOnes.length; badge.classList.toggle('hidden',!newOnes.length); }
+    }).catch(()=>{});
     // If currently on a tab that's now hidden, reset to pending
     if (!canV && (currentVerifTab === 'waiting' || currentVerifTab === 'done')) {
       currentVerifTab = 'pending';
@@ -3461,6 +3757,7 @@
     currentVerifTab = tab;
     document.querySelectorAll('.vtab').forEach(b => b.classList.remove('active'));
     document.getElementById('vtab-'+tab)?.classList.add('active');
+    if (tab === 'reports') { loadReports(); return; }
     renderVerifTab(tab);
   }
 
@@ -3997,7 +4294,7 @@
       allTypes = types; allPlacesRaw = placeRows;
       populateTypeFilter(types);
       renderStats(stats);
-      await preloadCommentCounts();
+      await Promise.all([preloadCommentCounts(), preloadReportedIds()]);
       renderFilteredPlaces();
       const bw = document.getElementById('badge-wer');
       if (bw) { bw.textContent = stats.pending; bw.classList.toggle('hidden', !stats.pending); }
