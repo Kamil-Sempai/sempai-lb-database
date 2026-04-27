@@ -2841,16 +2841,16 @@
     container.innerHTML = html;
   }
 
-  async function resolveReport(reportId, placeId, action) {
-    const confirmMsg = action === 'delete_place'
+  async function resolveReport(reportId, placeId, resolution) {
+    const confirmMsg = resolution === 'delete_place'
       ? 'Usunąć tę miejscówkę z bazy? Operacji nie można cofnąć.'
       : 'Oznaczyć zgłoszenie jako zignorowane?';
     if (!confirm(confirmMsg)) return;
 
-    const data = await callAPI('resolveReport', { reportId, placeId, action }, 'POST');
+    const data = await callAPI('resolveReport', { reportId, placeId, resolution }, 'POST');
     if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
 
-    if (action === 'delete_place') {
+    if (resolution === 'delete_place') {
       showToast('✅ Miejscówka usunięta z bazy', 'success');
       await refreshDataInBackground();
     } else {
