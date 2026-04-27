@@ -426,6 +426,34 @@
     .del-action-count{font-size:13px;font-weight:600;color:#FCA5A5}
     .del-action-count span{color:#F87171}
 
+    /* ── MIGRATION ──────────────────────────────── */
+    .mig-step{padding:18px 0;transition:opacity var(--t)}
+    .mig-step-locked{opacity:0.4;pointer-events:none}
+    .mig-step-locked.unlocked{opacity:1;pointer-events:all}
+    .mig-step-header{display:flex;align-items:flex-start;gap:14px}
+    .mig-step-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    .mig-step-num.done{background:var(--success)}
+    .mig-step-title{font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:3px}
+    .mig-step-desc{font-size:12.5px;color:var(--text-3);line-height:1.6}
+    .mig-divider{height:1px;background:var(--border);margin:4px 0}
+    .mig-sheet-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:var(--bg-input);border:1px solid var(--border);border-radius:99px;font-size:12px;color:var(--text-2)}
+    .mig-sheet-tag.done{border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08);color:var(--success)}
+    .mig-sheet-tag.copying{border-color:rgba(59,123,255,0.3);background:rgba(59,123,255,0.08);color:var(--accent)}
+
+    /* ── MIGRATION ──────────────────────────────── */
+    .mig-step{padding:18px 0;transition:opacity var(--t)}
+    .mig-step-locked{opacity:0.4;pointer-events:none}
+    .mig-step-locked.unlocked{opacity:1;pointer-events:all}
+    .mig-step-header{display:flex;align-items:flex-start;gap:14px}
+    .mig-step-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    .mig-step-num.done{background:var(--success)}
+    .mig-step-title{font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:3px}
+    .mig-step-desc{font-size:12.5px;color:var(--text-3);line-height:1.6}
+    .mig-divider{height:1px;background:var(--border);margin:4px 0}
+    .mig-sheet-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:var(--bg-input);border:1px solid var(--border);border-radius:99px;font-size:12px;color:var(--text-2)}
+    .mig-sheet-tag.done{border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08);color:var(--success)}
+    .mig-sheet-tag.copying{border-color:rgba(59,123,255,0.3);background:rgba(59,123,255,0.08);color:var(--accent)}
+
     /* ── ADMIN PANEL ────────────────────────────── */
     .admin-tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--bg-input);border-radius:var(--r);padding:3px;width:fit-content}
     .admin-tab{padding:7px 18px;border:none;border-radius:7px;background:transparent;font-family:var(--font);font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;transition:all var(--t)}
@@ -1074,9 +1102,10 @@
       <div class="page" id="page-admin">
 
         <div class="admin-tabs">
-          <button class="admin-tab active" id="atab-users"   onclick="showAdminTab('users')">👥 Użytkownicy</button>
-          <button class="admin-tab"         id="atab-types"  onclick="showAdminTab('types')">🏷️ Typy i kategorie</button>
-          <button class="admin-tab"         id="atab-settings" onclick="showAdminTab('settings')">⚙️ Ustawienia</button>
+          <button class="admin-tab active" id="atab-users"     onclick="showAdminTab('users')">👥 Użytkownicy</button>
+          <button class="admin-tab"        id="atab-types"     onclick="showAdminTab('types')">🏷️ Typy i kategorie</button>
+          <button class="admin-tab"        id="atab-migration" onclick="showAdminTab('migration')">🔄 Migracja danych</button>
+          <button class="admin-tab"        id="atab-settings"  onclick="showAdminTab('settings')">⚙️ Ustawienia</button>
         </div>
 
         <!-- USERS -->
@@ -1125,6 +1154,89 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               Zapisz zmiany
             </button>
+          </div>
+        </div>
+
+        <!-- MIGRATION -->
+        <div class="admin-section" id="asec-migration">
+          <div class="form-card" style="max-width:680px">
+            <div class="form-section-title">🔄 Migracja danych do nowego arkusza</div>
+            <p style="font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+              Przenieś całą bazę danych na inny arkusz Google Sheets — np. zarządzany przez konto menadżerskie.
+              Narzędzie skopiuje wszystkie zakładki i dane. Po migracji pobierzesz gotowy <code style="background:var(--bg-input);padding:2px 6px;border-radius:4px;font-size:12px">index.html</code> z nowym ID arkusza.
+            </p>
+
+            <!-- Step 1 -->
+            <div class="mig-step" id="mig-step-1">
+              <div class="mig-step-header">
+                <div class="mig-step-num">1</div>
+                <div>
+                  <div class="mig-step-title">Przygotuj nowy arkusz</div>
+                  <div class="mig-step-desc">Utwórz nowy Google Sheets na koncie menadżerskim i udostępnij go (edycja) do swojego konta @sempai.pl. Następnie wklej jego ID poniżej.</div>
+                </div>
+              </div>
+              <div style="margin-top:14px;display:flex;gap:10px;align-items:flex-end">
+                <div style="flex:1">
+                  <div class="field-label" style="margin-bottom:5px">ID nowego arkusza <span style="color:var(--danger)">*</span></div>
+                  <input class="field-input" id="mig-new-id" placeholder="1mZG_JofdxPuCHZjDuUF1vHTH2204SZ4XYtGZiS3ad7M" style="font-family:monospace;font-size:12px">
+                  <div class="field-hint">ID to ciąg znaków między <code>/d/</code> a <code>/edit</code> w URL arkusza</div>
+                </div>
+                <button class="btn btn-ghost" id="mig-verify-btn" onclick="migVerify()" style="flex-shrink:0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+                  Sprawdź dostęp
+                </button>
+              </div>
+              <div id="mig-verify-result" style="margin-top:10px;display:none"></div>
+            </div>
+
+            <div class="mig-divider" id="mig-div-2"></div>
+
+            <!-- Step 2 -->
+            <div class="mig-step mig-step-locked" id="mig-step-2">
+              <div class="mig-step-header">
+                <div class="mig-step-num">2</div>
+                <div>
+                  <div class="mig-step-title">Skopiuj dane</div>
+                  <div class="mig-step-desc">Wszystkie zakładki i dane zostaną skopiowane z bieżącego arkusza do nowego. Operacja może potrwać chwilę przy dużej bazie.</div>
+                </div>
+              </div>
+              <div style="margin-top:14px">
+                <div id="mig-sheets-list" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px"></div>
+                <button class="btn btn-primary" id="mig-copy-btn" onclick="migCopyData()" disabled>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  Kopiuj wszystkie dane
+                </button>
+                <div id="mig-copy-progress" style="margin-top:12px;display:none">
+                  <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:8px">
+                    <div id="mig-progress-fill" style="height:100%;background:linear-gradient(90deg,var(--accent),#10B981);width:0%;transition:width 0.4s ease;border-radius:99px"></div>
+                  </div>
+                  <div id="mig-copy-status" style="font-size:12px;color:var(--text-3)">Przygotowanie…</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mig-divider" id="mig-div-3"></div>
+
+            <!-- Step 3 -->
+            <div class="mig-step mig-step-locked" id="mig-step-3">
+              <div class="mig-step-header">
+                <div class="mig-step-num done" id="mig-num-3">3</div>
+                <div>
+                  <div class="mig-step-title">Pobierz nowy plik narzędzia</div>
+                  <div class="mig-step-desc">Gotowy <code style="background:var(--bg-input);padding:2px 5px;border-radius:4px;font-size:11px">index.html</code> z zaktualizowanym ID arkusza. Wgraj go na GitHub zamiast obecnego.</div>
+                </div>
+              </div>
+              <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-primary" id="mig-download-btn" onclick="migDownload()" disabled>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Pobierz zaktualizowany index.html
+                </button>
+                <div id="mig-done-msg" style="display:none;font-size:13px;color:var(--success);align-self:center">
+                  ✅ Migracja zakończona! Wgraj plik na GitHub i zaktualizuj Apps Script.
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -2657,6 +2769,140 @@
     return n > 0 ? 'comment-btn has-comments' : 'comment-btn';
   }
 
+  /* ── MIGRATION ────────────────────────────────── */
+  let migNewId = '';
+  const SHEETS_TO_MIGRATE = [
+    'baza_miejsc_lb', 'weryfikacja', 'komentarze',
+    'uzytkownicy', 'konfiguracja', 'historia_statusow', 'konta_social_media'
+  ];
+
+  function initMigration() {
+    // Reset to initial state
+    migNewId = '';
+    const step2 = document.getElementById('mig-step-2');
+    const step3 = document.getElementById('mig-step-3');
+    if (step2) step2.classList.add('mig-step-locked');
+    if (step3) step3.classList.add('mig-step-locked');
+    const btn2 = document.getElementById('mig-copy-btn');
+    const btn3 = document.getElementById('mig-download-btn');
+    if (btn2) btn2.disabled = true;
+    if (btn3) btn3.disabled = true;
+    const res = document.getElementById('mig-verify-result');
+    if (res) res.style.display = 'none';
+
+    // Show sheet tags
+    const tagWrap = document.getElementById('mig-sheets-list');
+    if (tagWrap) {
+      tagWrap.innerHTML = SHEETS_TO_MIGRATE.map(s =>
+        `<span class="mig-sheet-tag" id="mtag-${s}">📋 ${s}</span>`
+      ).join('');
+    }
+
+    // Pre-fill current sheet ID for reference
+    const input = document.getElementById('mig-new-id');
+    if (input && !input.value) input.value = '';
+  }
+
+  async function migVerify() {
+    const id = document.getElementById('mig-new-id')?.value.trim();
+    const res = document.getElementById('mig-verify-result');
+    if (!id) { alert('Wklej ID nowego arkusza.'); return; }
+    if (id === SPREADSHEET_ID) { alert('To jest ten sam arkusz co aktualny. Podaj ID nowego arkusza.'); return; }
+
+    const btn = document.getElementById('mig-verify-btn');
+    btn.disabled = true; btn.textContent = 'Sprawdzam…';
+    res.style.display = 'none';
+
+    const data = await callAPI('verifySheet', { sheetId: id }, 'POST');
+
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> Sprawdź dostęp`;
+
+    res.style.display = '';
+    if (!data || data.error) {
+      res.innerHTML = `<div style="padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:var(--r);font-size:12.5px;color:var(--danger)">
+        ❌ Brak dostępu do arkusza. Upewnij się że dodałeś swoje konto jako edytora w nowym arkuszu.<br>
+        <span style="opacity:0.8">${escHtml(data?.error||'')}</span>
+      </div>`;
+      return;
+    }
+
+    migNewId = id;
+    res.innerHTML = `<div style="padding:10px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:var(--r);font-size:12.5px;color:var(--success)">
+      ✅ Dostęp potwierdzony: <strong>${escHtml(data.title||id)}</strong>
+    </div>`;
+
+    // Unlock step 2
+    const step2 = document.getElementById('mig-step-2');
+    if (step2) step2.classList.remove('mig-step-locked');
+    const btn2 = document.getElementById('mig-copy-btn');
+    if (btn2) btn2.disabled = false;
+  }
+
+  async function migCopyData() {
+    if (!migNewId) return;
+    const btn = document.getElementById('mig-copy-btn');
+    const progress = document.getElementById('mig-copy-progress');
+    const fill = document.getElementById('mig-progress-fill');
+    const status = document.getElementById('mig-copy-status');
+
+    btn.disabled = true;
+    btn.textContent = 'Kopiowanie…';
+    progress.style.display = '';
+
+    let done = 0;
+    for (const sheet of SHEETS_TO_MIGRATE) {
+      const tag = document.getElementById('mtag-'+sheet);
+      if (tag) tag.className = 'mig-sheet-tag copying';
+      if (status) status.textContent = `Kopiuję: ${sheet}…`;
+
+      const data = await callAPI('migrateSheet', { targetId: migNewId, sheetName: sheet }, 'POST');
+
+      if (tag) tag.className = 'mig-sheet-tag done';
+      done++;
+      if (fill) fill.style.width = Math.round((done/SHEETS_TO_MIGRATE.length)*100)+'%';
+
+      if (data?.error) {
+        if (status) status.textContent = `⚠️ Błąd przy ${sheet}: ${data.error}`;
+        // Continue with other sheets
+      }
+    }
+
+    if (status) status.textContent = `✅ Skopiowano ${done} zakładek`;
+
+    // Unlock step 3
+    const step3 = document.getElementById('mig-step-3');
+    if (step3) step3.classList.remove('mig-step-locked');
+    const btn3 = document.getElementById('mig-download-btn');
+    if (btn3) btn3.disabled = false;
+    document.getElementById('mig-num-3')?.classList.add('done');
+
+    btn.textContent = '✅ Dane skopiowane';
+  }
+
+  function migDownload() {
+    if (!migNewId) return;
+    // Read current index.html, replace SPREADSHEET_ID
+    fetch(window.location.href)
+      .then(r => r.text())
+      .then(html => {
+        const updated = html.replace(
+          `const SPREADSHEET_ID  = '${SPREADSHEET_ID}'`,
+          `const SPREADSHEET_ID  = '${migNewId}'`
+        );
+        const blob = new Blob([updated], { type: 'text/html' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = 'index.html';
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById('mig-done-msg').style.display = 'flex';
+        showToast('✅ Plik pobrany — wgraj na GitHub!', 'success', 6000);
+      })
+      .catch(() => alert('Błąd pobierania pliku. Odśwież stronę i spróbuj ponownie.'));
+  }
+
   /* ── ADMIN PANEL ──────────────────────────────── */
   let adminUsers = [];
   let adminTypes = [];
@@ -2667,9 +2913,10 @@
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
     document.getElementById('atab-'+tab)?.classList.add('active');
     document.getElementById('asec-'+tab)?.classList.add('active');
-    if (tab === 'users')    loadAdminUsers();
-    if (tab === 'types')    loadAdminTypesCategories();
-    if (tab === 'settings') loadAdminSettings();
+    if (tab === 'users')     loadAdminUsers();
+    if (tab === 'types')     loadAdminTypesCategories();
+    if (tab === 'settings')  loadAdminSettings();
+    if (tab === 'migration') initMigration();
   }
 
   /* ── USERS ───────────────────────────────────── */
