@@ -1850,10 +1850,18 @@
     try {
       // Step 1: get spreadsheet ID from Apps Script (dynamic — no hardcoding needed)
       dlStep(0);
-      const idData = await Promise.race([
+      let idData = await Promise.race([
         callAPI('getSpreadsheetId'),
-        new Promise((_,rej) => setTimeout(()=>rej(new Error('Apps Script nie odpowiada (timeout)')), 20000))
+        new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 20000))
       ]);
+      // Retry once on Unauthorized (cold start / token timing issue)
+      if (!idData || idData.error === 'Unauthorized') {
+        await new Promise(r => setTimeout(r, 2000));
+        idData = await Promise.race([
+          callAPI('getSpreadsheetId'),
+          new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 20000))
+        ]);
+      }
       if (!idData || idData.error) throw new Error('Nie można pobrać ID arkusza: ' + (idData?.error||'brak odpowiedzi'));
       SPREADSHEET_ID = idData.id;
       console.log('[LB] Spreadsheet:', idData.title, '(' + SPREADSHEET_ID + ')');
@@ -2807,15 +2815,24 @@
 
     const renderCard = r => {
       const isDone = r.status !== 'nowe';
+      const statusLabel = r.status === 'usunięto' ? 'Usunięto z bazy' : 'Zignorowano';
       const statusBadge = isDone
-        ? `<span class="verif-status-badge ${r.status==='usunięto'?'vs-rejected':'vs-approved'}">${r.status==='usunięto'?'Usunięto z bazy':'Zignorowano'}</span>`
+        ? `<span class="verif-status-badge ${r.status==='usunięto'?'vs-rejected':'vs-approved'}">${statusLabel}</span>`
         : `<span class="verif-status-badge vs-pending">Nowe</span>`;
+
+      const resolverInfo = isDone && r.resolvedBy
+        ? `<div style="font-size:11.5px;color:var(--text-3);margin-top:6px">
+            ${statusLabel === 'Usunięto z bazy' ? '🗑' : '✓'} Rozpatrzył: <strong style="color:var(--text-2)">${escHtml(r.resolvedBy||r.resolvedByEmail)}</strong>
+            ${r.resolvedDate ? `· ${escHtml(r.resolvedDate)}` : ''}
+          </div>`
+        : '';
 
       return `<div class="verif-card" id="rcard-${escAttr(r.id)}">
         <div class="verif-card-head">
           <div style="flex:1;min-width:0">
             <a class="verif-url" href="${escHtml(r.placeUrl.startsWith('http')?r.placeUrl:'https://'+r.placeUrl)}" target="_blank" rel="noopener">${escHtml(r.placeUrl)}</a>
             <div class="verif-meta">Zgłosił: ${escHtml(r.reporter||r.reporterEmail)} · ${escHtml(r.date)}</div>
+            ${resolverInfo}
           </div>
           ${statusBadge}
         </div>
