@@ -2424,7 +2424,10 @@
 
     const role = sessionStorage.getItem('sld_role');
     const isAdminUser = (role==='admin'||role==='super_admin') && viewMode==='admin';
-    const canEditUser = isAdminUser || (role==='weryfikator' && viewMode!=='user');
+    // Weryfikator może edytować: prawdziwy weryfikator LUB admin symulujący widok weryfikatora
+    const canEditUser = isAdminUser
+      || role === 'weryfikator'
+      || ((role==='admin'||role==='super_admin') && viewMode==='weryfikator');
 
     const rows = data.items.map(item => {
       const badge   = statusBadge(item.code, item.status);
