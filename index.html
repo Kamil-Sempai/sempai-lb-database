@@ -1419,7 +1419,11 @@
 <div class="del-action-bar" id="del-action-bar">
   <div class="del-action-count">Zaznaczono: <span id="del-sel-count">0</span> miejsc</div>
   <button class="btn btn-ghost btn-sm" onclick="clearPlaceSelection()" style="color:var(--text-2)">Odznacz</button>
-  <button class="btn btn-sm" onclick="deleteSelected()" style="background:var(--danger);color:#fff;border:none">
+  <button class="btn btn-sm" id="del-export-btn" onclick="exportSelectedCSV()" style="background:var(--accent);color:#fff;border:none">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Eksportuj CSV
+  </button>
+  <button class="btn btn-sm" id="del-delete-btn" onclick="deleteSelected()" style="background:var(--danger);color:#fff;border:none;display:none">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     Usuń zaznaczone
   </button>
@@ -2424,10 +2428,12 @@
 
     const role = sessionStorage.getItem('sld_role');
     const isAdminUser = (role==='admin'||role==='super_admin') && viewMode==='admin';
-    // Weryfikator może edytować: prawdziwy weryfikator LUB admin symulujący widok weryfikatora
+    // Weryfikator może edytować: prawdziwy weryfikator LUB admin w trybie weryfikatora
+    // Sprawdzamy też DOM bezpośrednio jako fallback (viewMode może być desync)
+    const vtWerActive = document.getElementById('vt-weryfikator')?.classList.contains('active');
     const canEditUser = isAdminUser
       || role === 'weryfikator'
-      || ((role==='admin'||role==='super_admin') && viewMode==='weryfikator');
+      || ((role==='admin'||role==='super_admin') && (viewMode==='weryfikator' || vtWerActive));
 
     const rows = data.items.map(item => {
       const badge   = statusBadge(item.code, item.status);
@@ -2444,10 +2450,11 @@
       const rowId   = 'row-' + escAttr(item.id);
       const cmtId   = 'cmt-' + escAttr(item.id);
       const isSel   = placeSelected.has(String(item.id));
-      const cbCell  = isAdminUser ? `<td class="td-cb"><div class="row-cb ${isSel?'checked':''}" id="pcb-${escAttr(item.id)}" onclick="togglePlaceRow('${escAttr(item.id)}',event)"></div></td>` : '';
+      const cbCell  = `<td class="td-cb"><div class="row-cb ${isSel?'checked':''}" id="pcb-${escAttr(item.id)}" onclick="togglePlaceRow('${escAttr(item.id)}',event)"></div></td>`;
       const cmtLabel = getCommentLabel(item.id);
       const cmtClass = getCommentBtnClass(item.id);
-      return `<tr id="${rowId}" ${isSel?'style="background:rgba(239,68,68,0.04)"':''}>
+      const selColor = isAdminUser ? 'rgba(239,68,68,0.04)' : 'rgba(59,123,255,0.06)';
+      return `<tr id="${rowId}" ${isSel?`style="background:${selColor}"`:''}>`+`
         ${cbCell}
         <td class="td-url">
           <div style="display:flex;align-items:flex-start">
@@ -2486,7 +2493,7 @@
         </td>
       </tr>
       <tr class="comments-row" id="${cmtId}" style="display:none">
-        <td colspan="${isAdminUser?9:8}">
+        <td colspan="9">
           <div class="comments-panel">
             <div class="comments-inner" id="cinner-${escAttr(item.id)}">
               <div class="comment-loading">Ładowanie komentarzy…</div>
@@ -2503,7 +2510,7 @@
         <div class="table-scroll">
           <table class="data-table">
             <colgroup>
-              <col id="col-cb" class="col-cb" style="${isAdminUser?'':'display:none'}">
+              <col id="col-cb" class="col-cb">
               <col class="col-url">
               <col class="col-type">
               <col class="col-status">
@@ -2514,7 +2521,7 @@
               <col class="col-actions">
             </colgroup>
             <thead><tr>
-              <th class="th-cb" id="th-cb" style="${isAdminUser?'':'display:none'}">
+              <th class="th-cb" id="th-cb">
                 <div class="row-cb" id="th-cb-box" onclick="toggleSelectAllPlaces()" title="Zaznacz wszystkie"></div>
               </th>
               <th>URL / Nazwa</th>
@@ -2892,7 +2899,11 @@
     const cb  = document.getElementById('pcb-'+id);
     const row = document.getElementById('row-'+id);
     if (cb)  cb.classList.toggle('checked', placeSelected.has(sid));
-    if (row) row.style.background = placeSelected.has(sid) ? 'rgba(239,68,68,0.04)' : '';
+    if (row) {
+      const role = sessionStorage.getItem('sld_role');
+      const isAdm = (role==='admin'||role==='super_admin') && viewMode==='admin';
+      row.style.background = placeSelected.has(sid) ? (isAdm ? 'rgba(239,68,68,0.04)' : 'rgba(59,123,255,0.06)') : '';
+    }
     updatePlaceSelBar();
   }
 
@@ -2915,11 +2926,63 @@
     const n = placeSelected.size;
     if (count) count.textContent = n;
     if (bar)   bar.classList.toggle('show', n > 0);
+
+    // Show delete button only for admins
+    const delBtn = document.getElementById('del-delete-btn');
+    if (delBtn) {
+      const role = sessionStorage.getItem('sld_role');
+      const canDel = (role==='admin'||role==='super_admin') && viewMode==='admin';
+      delBtn.style.display = canDel ? '' : 'none';
+    }
+
     const thBox = document.getElementById('th-cb-box');
     if (thBox) {
       const allIds = allPlacesRaw.filter(r=>r[1]).map(r=>String(r[0]));
       thBox.classList.toggle('checked', allIds.length > 0 && allIds.every(id => placeSelected.has(id)));
     }
+  }
+
+  function exportSelectedCSV() {
+    const ids = [...placeSelected];
+    if (!ids.length) return;
+
+    // Get selected rows from allPlacesRaw
+    // allPlacesRaw cols: [0]ID [1]URL [2]Nazwa [3]Typ [4]Kategoria [5]DA [6]DR [7]Dofollow [8]Status [9]KodHTTP [10]Sprawdzenie [11]DodałBy [12]DataDodania [13]Notatki
+    const idSet = new Set(ids.map(String));
+    const rows = allPlacesRaw.filter(r => r[1] && idSet.has(String(r[0])));
+
+    const headers = ['URL', 'Nazwa', 'Typ', 'Kategoria', 'Dofollow', 'Status HTTP', 'Data dodania', 'Notatki'];
+
+    const csvEscape = val => {
+      const s = String(val ?? '');
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
+    const lines = [
+      headers.join(','),
+      ...rows.map(r => [
+        r[1],                                   // URL
+        r[2] || '',                             // Nazwa
+        r[3] || '',                             // Typ
+        r[4] || '',                             // Kategoria
+        String(r[7]||'').toUpperCase() === 'TAK' ? 'TAK' : (String(r[7]||'').toUpperCase() === 'NIE' ? 'NIE' : ''),  // Dofollow
+        r[9] ? String(r[9]) : '',              // Status HTTP (kod)
+        r[12] ? String(r[12]).slice(0,10) : '', // Data dodania
+        r[13] || ''                            // Notatki
+      ].map(csvEscape).join(','))
+    ];
+
+    const bom = '\uFEFF'; // UTF-8 BOM dla poprawnego otwarcia w Excelu
+    const blob = new Blob([bom + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const date = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `sempai-lb-export-${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showToast(`✅ Wyeksportowano ${rows.length} miejscówek`, 'success');
   }
 
   async function deleteSelected() {
@@ -2928,7 +2991,7 @@
     const n = ids.length;
     if (!confirm(`Usunąć ${n} zaznaczon${n===1?'ą':'ych'} miejscówk${n===1?'ę':'i'}? Tej operacji nie można cofnąć.`)) return;
 
-    const btn = document.querySelector('#del-action-bar button:last-child');
+    const btn = document.getElementById('del-delete-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Usuwanie…'; }
 
     const data = await callAPI('deletePlaces', { ids }, 'POST');
