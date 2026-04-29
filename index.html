@@ -410,7 +410,7 @@
     /* ── TABLE ROW SELECTION (delete) ──────────── */
     .td-cb{width:32px;padding:0 8px 0 4px!important;vertical-align:middle}
     .row-cb{width:15px;height:15px;border:1.5px solid var(--border);border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all var(--t);background:transparent;flex-shrink:0;vertical-align:middle}
-    .row-cb.checked{background:var(--danger);border-color:var(--danger)}
+    .row-cb.checked{background:var(--accent);border-color:var(--accent)}
     .row-cb.checked::after{content:'✓';font-size:9px;color:#fff;font-weight:700}
     tr:hover .row-cb{border-color:var(--border-2)}
     .th-cb{width:32px;padding:0 8px 0 4px!important}
@@ -418,16 +418,16 @@
     /* Delete action bar */
     .del-action-bar{
       position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
-      background:#1A0505;border:1px solid rgba(239,68,68,0.3);
+      background:#0A1628;border:1px solid rgba(59,123,255,0.3);
       border-radius:var(--r-xl);padding:12px 20px;
       display:flex;align-items:center;gap:14px;
-      box-shadow:0 8px 32px rgba(239,68,68,0.15);
+      box-shadow:0 8px 32px rgba(59,123,255,0.15);
       transition:transform 0.3s cubic-bezier(0.22,1,0.36,1);
       z-index:200;pointer-events:none;
     }
     .del-action-bar.show{transform:translateX(-50%) translateY(0);pointer-events:all}
-    .del-action-count{font-size:13px;font-weight:600;color:#FCA5A5}
-    .del-action-count span{color:#F87171}
+    .del-action-count{font-size:13px;font-weight:600;color:#93C5FD}
+    .del-action-count span{color:#60A5FA}
 
     /* ── MIGRATION ──────────────────────────────── */
     .mig-step{padding:18px 0;transition:opacity var(--t)}
@@ -1563,13 +1563,14 @@
     if(navEl&&navEl.classList)navEl.classList.add('active');
     else{const nb=document.getElementById('nav-'+name);if(nb)nb.classList.add('active')}
     closeUserMenu();
-    // Zawsze czyść selekcję przy zmianie zakładki — resetuje checkboxy i pasek akcji
+    // Zawsze czyść selekcję przy zmianie zakładki — resetuje checkboxy, tła i pasek akcji
     placeSelected.clear();
     const _bar = document.getElementById('del-action-bar');
     if(_bar) _bar.classList.remove('show');
-    // Odznacz wizualnie wszystkie checkboxy w tabeli
+    // Odznacz checkboxy i wyczyść tło wierszy
     document.querySelectorAll('.row-cb.checked').forEach(cb => cb.classList.remove('checked'));
-    document.querySelectorAll('[id^="pcb-"]').forEach(cb => cb.classList.remove('checked'));
+    document.querySelectorAll('tr[style*="rgba(59,123,255"]').forEach(tr => tr.style.background = '');
+    document.querySelectorAll('tr[style*="rgba(239,68,68"]').forEach(tr => tr.style.background = '');
     const _thBox = document.getElementById('th-cb-box');
     if(_thBox) _thBox.classList.remove('checked');
     if(name==='dodaj') initForm();
@@ -2568,7 +2569,7 @@
       const cbCell  = `<td class="td-cb"><div class="row-cb ${isSel?'checked':''}" id="pcb-${escAttr(item.id)}" onclick="togglePlaceRow('${escAttr(item.id)}',event)"></div></td>`;
       const cmtLabel = getCommentLabel(item.id);
       const cmtClass = getCommentBtnClass(item.id);
-      const selColor = isAdminUser ? 'rgba(239,68,68,0.04)' : 'rgba(59,123,255,0.06)';
+      const selColor = 'rgba(59,123,255,0.07)';
       return `<tr id="${rowId}" ${isSel?`style="background:${selColor}"`:''}>`+`
         ${cbCell}
         <td class="td-url">
@@ -3017,7 +3018,7 @@
     if (row) {
       const role = sessionStorage.getItem('sld_role');
       const isAdm = (role==='admin'||role==='super_admin') && viewMode==='admin';
-      row.style.background = placeSelected.has(sid) ? (isAdm ? 'rgba(239,68,68,0.04)' : 'rgba(59,123,255,0.06)') : '';
+      row.style.background = placeSelected.has(sid) ? 'rgba(59,123,255,0.07)' : '';
     }
     updatePlaceSelBar();
   }
