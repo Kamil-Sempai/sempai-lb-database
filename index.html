@@ -1446,10 +1446,24 @@
 <div class="del-action-bar" id="del-action-bar">
   <div class="del-action-count">Zaznaczono: <span id="del-sel-count">0</span> miejsc</div>
   <button class="btn btn-ghost btn-sm" onclick="clearPlaceSelection()" style="color:var(--text-2)">Odznacz</button>
-  <button class="btn btn-sm" id="del-export-btn" onclick="exportSelectedCSV()" style="background:var(--accent);color:#fff;border:none">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    Eksportuj CSV
-  </button>
+  <div style="position:relative;display:inline-block" id="export-wrap">
+    <button class="btn btn-sm" id="del-export-btn" onclick="toggleExportMenu(event)" style="background:var(--accent);color:#fff;border:none;display:flex;align-items:center;gap:5px">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Eksportuj
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div id="export-menu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-lg);z-index:400;min-width:210px">
+      <button onclick="exportSelectedCSV('local')" style="display:flex;align-items:center;gap:9px;padding:10px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Pobierz na dysk lokalny
+      </button>
+      <div style="height:1px;background:var(--border)"></div>
+      <button onclick="exportSelectedCSV('drive')" style="display:flex;align-items:center;gap:9px;padding:10px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
+        Zapisz na Google Drive
+      </button>
+    </div>
+  </div>
   <button class="btn btn-sm" id="del-delete-btn" onclick="deleteSelected()" style="background:var(--danger);color:#fff;border:none;display:none">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     Usuń zaznaczone
@@ -3005,41 +3019,104 @@
     }
   }
 
-  function exportSelectedCSV() {
+  function toggleExportMenu(e) {
+    e && e.stopPropagation();
+    const menu = document.getElementById('export-menu');
+    if (!menu) return;
+    const open = menu.style.display !== 'none';
+    menu.style.display = open ? 'none' : 'block';
+    if (!open) {
+      const handler = ev => {
+        const wrap = document.getElementById('export-wrap');
+        if (!wrap || !wrap.contains(ev.target)) {
+          menu.style.display = 'none';
+          document.removeEventListener('click', handler);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', handler), 0);
+    }
+  }
+
+  async function exportSelectedCSV(dest) {
     const ids = [...placeSelected];
     if (!ids.length) return;
+
+    // Zamknij menu
+    const menu = document.getElementById('export-menu');
+    if (menu) menu.style.display = 'none';
 
     const idSet = new Set(ids.map(String));
     const rows = allPlacesRaw.filter(r => r[1] && idSet.has(String(r[0])));
 
-    // Kolumny: URL, DoFollow, Pozyskany link (puste — do samodzielnego wypełnienia)
     const headers = ['URL', 'DoFollow', 'Pozyskany link'];
-
     const csvEscape = val => {
       const s = String(val ?? '');
       return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
     };
-
     const lines = [
       headers.join(','),
       ...rows.map(r => [
         r[1],
         String(r[7]||'').toUpperCase() === 'TAK' ? 'TAK' : (String(r[7]||'').toUpperCase() === 'NIE' ? 'NIE' : ''),
-        ''  // Pozyskany link — puste
+        ''
       ].map(csvEscape).join(','))
     ];
 
     const bom = '\uFEFF';
-    const blob = new Blob([bom + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
+    const csvContent = bom + lines.join('\r\n');
     const date = new Date().toISOString().slice(0,10);
-    a.href = url;
-    a.download = `sempai-lb-export-${date}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const filename = `sempai-lb-export-${date}.csv`;
 
-    showToast(`✅ Wyeksportowano ${rows.length} miejscówek`, 'success');
+    if (dest === 'drive') {
+      await exportToDrive(csvContent, filename, rows.length);
+    } else {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+      showToast(`✅ Wyeksportowano ${rows.length} miejscówek`, 'success');
+    }
+  }
+
+  async function exportToDrive(csvContent, filename, count) {
+    if (!currentUser?.access_token) { showToast('⚠️ Brak tokena — zaloguj się ponownie', 'error'); return; }
+
+    const fd = getFD();
+    const folderId = fd?.id || null;
+    const folderLabel = fd ? ` (${fd.name})` : ' (katalog główny Dysku)';
+
+    const toastObj = showToast('⏳ Zapisuję na Google Drive…', 'info', 30000);
+
+    try {
+      const boundary = 'lb_csv_boundary_' + Date.now();
+      const metadata = JSON.stringify({ name: filename, mimeType: 'text/csv', ...(folderId ? { parents: [folderId] } : {}) });
+      const body = '--' + boundary + '\r\n'
+        + 'Content-Type: application/json; charset=UTF-8\r\n\r\n'
+        + metadata + '\r\n'
+        + '--' + boundary + '\r\n'
+        + 'Content-Type: text/csv; charset=UTF-8\r\n\r\n'
+        + csvContent + '\r\n'
+        + '--' + boundary + '--';
+
+      const resp = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+        { method: 'POST', headers: { 'Authorization': 'Bearer ' + currentUser.access_token, 'Content-Type': 'multipart/related; boundary=' + boundary }, body }
+      );
+      const result = await resp.json();
+      if (result.error) throw new Error(result.error.message || 'Błąd Drive API');
+
+      toastObj.update(`✅ Zapisano ${count} miejscówek na Drive${folderLabel}`, 'success');
+
+      if (result.webViewLink) {
+        setTimeout(() => {
+          const el = document.getElementById('lb-toast');
+          if (el) { el.style.cursor = 'pointer'; el.title = 'Kliknij aby otworzyć plik'; el.onclick = () => window.open(result.webViewLink, '_blank'); }
+        }, 200);
+      }
+    } catch(err) {
+      toastObj.update('⚠️ Błąd zapisu na Drive: ' + err.message, 'error');
+    }
   }
 
   async function deleteSelected() {
