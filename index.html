@@ -1563,12 +1563,15 @@
     if(navEl&&navEl.classList)navEl.classList.add('active');
     else{const nb=document.getElementById('nav-'+name);if(nb)nb.classList.add('active')}
     closeUserMenu();
-    // Ukryj pasek akcji i wyczyść selekcję gdy opuszczamy bazę miejsc
-    if(name !== 'baza') {
-      placeSelected.clear();
-      const bar = document.getElementById('del-action-bar');
-      if(bar) bar.classList.remove('show');
-    }
+    // Zawsze czyść selekcję przy zmianie zakładki — resetuje checkboxy i pasek akcji
+    placeSelected.clear();
+    const _bar = document.getElementById('del-action-bar');
+    if(_bar) _bar.classList.remove('show');
+    // Odznacz wizualnie wszystkie checkboxy w tabeli
+    document.querySelectorAll('.row-cb.checked').forEach(cb => cb.classList.remove('checked'));
+    document.querySelectorAll('[id^="pcb-"]').forEach(cb => cb.classList.remove('checked'));
+    const _thBox = document.getElementById('th-cb-box');
+    if(_thBox) _thBox.classList.remove('checked');
     if(name==='dodaj') initForm();
     if(name==='weryfikacja') loadVerification();
     if(name==='monitoring') renderMonitoring();
