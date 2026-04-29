@@ -1578,6 +1578,8 @@
     if(name==='monitoring') renderMonitoring();
     if(name==='admin') { loadAdminUsers(); loadAdminTypesCategories(); loadAdminSettings(); }
     if(name==='users') { showPage('admin', document.getElementById('nav-admin')); showAdminTab('users'); }
+    // Rerender tabeli przy powrocie do bazy — czyści podświetlenia po resecie selekcji
+    if(name==='baza') renderFilteredPlaces();
   }
 
   /* ── VIEW MODE TOGGLE (admin only) ───────────── */
