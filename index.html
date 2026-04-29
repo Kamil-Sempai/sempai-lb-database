@@ -1678,8 +1678,16 @@
 
   function cancelPicker(){
     document.getElementById('picker-modal').classList.remove('show');
+    // Przywróć nagłówek i przycisk jeśli był picker eksportu
+    if (pickerCallback === 'export') {
+      const title = document.querySelector('#picker-modal .picker-head-title span:last-child');
+      if (title) title.textContent = 'Wybierz folder roboczy';
+      const confirmBtn = document.getElementById('picker-confirm-btn');
+      if (confirmBtn) { confirmBtn.textContent = 'Wybierz ✓'; confirmBtn.disabled = true; }
+      _exportPending = null;
+      return;
+    }
     if(pickerCallback==='setup'&&!localStorage.getItem(SETUP_KEY)){
-      // user cancelled first-time setup — default to root
       setFD(null);
       localStorage.setItem(SETUP_KEY,'1');
       refreshFolderDisplay();
@@ -1687,6 +1695,20 @@
   }
 
   function confirmPicker(){
+    // Obsługa callbacku eksportu CSV na Drive
+    if (pickerCallback === 'export') {
+      document.getElementById('picker-modal').classList.remove('show');
+      // Przywróć domyślny nagłówek i przycisk
+      const title = document.querySelector('#picker-modal .picker-head-title span:last-child');
+      if (title) title.textContent = 'Wybierz folder roboczy';
+      const confirmBtn = document.getElementById('picker-confirm-btn');
+      if (confirmBtn) confirmBtn.textContent = 'Wybierz ✓';
+      // Zapisz do wybranego folderu (lub root jeśli nic nie wybrano)
+      const folderId = pickerSelected?.id || 'root';
+      const folderName = pickerSelected?.name || null;
+      _doExportToDrive(folderId, folderName);
+      return;
+    }
     const fd=pickerSelected;
     if(fd)setFD(fd); else setFD(null);
     localStorage.setItem(SETUP_KEY,'1');
@@ -1736,6 +1758,11 @@
 
   async function loadPickerFolder(folderId){
     hideNewFolderRow();
+    // W trybie eksportu confirm jest zawsze aktywny (można wybrać bieżący folder)
+    if (pickerCallback === 'export') {
+      const confirmBtn = document.getElementById('picker-confirm-btn');
+      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Zapisz tutaj ✓'; }
+    }
     const list=document.getElementById('picker-list');
     list.innerHTML='<div class="picker-loading"><div class="picker-spinner"></div>Ładowanie folderów…</div>';
     try{
@@ -1986,9 +2013,11 @@
 
       if(!localStorage.getItem(SETUP_KEY)) setTimeout(()=>openPicker('setup'),400);
 
-      // Poradnik - pokaz przy pierwszym logowaniu z dana rola
-      const _gr = (role === 'super_admin') ? 'admin' : (role || 'user');
-      if (!hasSeenGuide(_gr)) setTimeout(() => openGuideModal(_gr), 600);
+      // Poradnik - pokaz tylko przy pierwszym otwarciu narzedzia (localStorage)
+      if (!hasSeenGuide()) {
+        const _gr = (role === 'super_admin') ? 'admin' : (role || 'user');
+        setTimeout(() => openGuideModal(_gr), 600);
+      }
 
     } catch(err) {
       console.error('[LB] loadDataThenShowApp error:', err);
@@ -3079,18 +3108,53 @@
     }
   }
 
+  // Dane oczekujące na wybór folderu przez picker eksportu
+  let _exportPending = null;
+
   async function exportToDrive(csvContent, filename, count) {
     if (!currentUser?.access_token) { showToast('⚠️ Brak tokena — zaloguj się ponownie', 'error'); return; }
+    // Zapamiętaj dane i otwórz picker folderów
+    _exportPending = { csvContent, filename, count };
+    openExportPicker();
+  }
 
-    const fd = getFD();
-    const folderId = fd?.id || null;
-    const folderLabel = fd ? ` (${fd.name})` : ' (katalog główny Dysku)';
+  function openExportPicker() {
+    // Używamy istniejącego picker-modal z nowym callbackiem
+    pickerStack = [{ id: 'root', name: 'Mój dysk' }];
+    pickerSelected = null;
+    pickerCallback = 'export'; // nowy typ callbacku
+    updatePickerUI();
 
+    // Zmień nagłówek pickera na "Wybierz folder zapisu"
+    const title = document.querySelector('#picker-modal .picker-head-title span:last-child');
+    if (title) title.textContent = 'Wybierz folder zapisu CSV';
+
+    // Zmień przycisk confirm
+    const confirmBtn = document.getElementById('picker-confirm-btn');
+    if (confirmBtn) {
+      confirmBtn.textContent = 'Zapisz tutaj ✓';
+      confirmBtn.disabled = false; // "Mój dysk" jako domyślny = zawsze można wybrać
+    }
+
+    document.getElementById('picker-modal').classList.add('show');
+    loadPickerFolder('root');
+  }
+
+  async function _doExportToDrive(folderId, folderName) {
+    const { csvContent, filename, count } = _exportPending || {};
+    _exportPending = null;
+    if (!csvContent) return;
+
+    const folderLabel = folderName ? ` (${folderName})` : ' (Mój dysk)';
     const toastObj = showToast('⏳ Zapisuję na Google Drive…', 'info', 30000);
 
     try {
-      const boundary = 'lb_csv_boundary_' + Date.now();
-      const metadata = JSON.stringify({ name: filename, mimeType: 'text/csv', ...(folderId ? { parents: [folderId] } : {}) });
+      const boundary = 'lb_csv_' + Date.now();
+      const metadata = JSON.stringify({
+        name: filename,
+        mimeType: 'text/csv',
+        ...(folderId && folderId !== 'root' ? { parents: [folderId] } : {})
+      });
       const body = '--' + boundary + '\r\n'
         + 'Content-Type: application/json; charset=UTF-8\r\n\r\n'
         + metadata + '\r\n'
@@ -3106,16 +3170,15 @@
       const result = await resp.json();
       if (result.error) throw new Error(result.error.message || 'Błąd Drive API');
 
-      toastObj.update(`✅ Zapisano ${count} miejscówek na Drive${folderLabel}`, 'success');
-
+      toastObj.update('✅ Zapisano ' + count + ' miejscówek na Drive' + folderLabel, 'success');
       if (result.webViewLink) {
         setTimeout(() => {
           const el = document.getElementById('lb-toast');
-          if (el) { el.style.cursor = 'pointer'; el.title = 'Kliknij aby otworzyć plik'; el.onclick = () => window.open(result.webViewLink, '_blank'); }
+          if (el) { el.style.cursor = 'pointer'; el.title = 'Kliknij aby otworzyć'; el.onclick = () => window.open(result.webViewLink, '_blank'); }
         }, 200);
       }
     } catch(err) {
-      toastObj.update('⚠️ Błąd zapisu na Drive: ' + err.message, 'error');
+      toastObj.update('⚠️ Błąd zapisu: ' + err.message, 'error');
     }
   }
 
@@ -4431,10 +4494,9 @@
 
 
   /* ── GUIDE ─────────────────────────── */
-  const GUIDE_KEY = 'sld_guide_v1';
-  function _gs(){try{return JSON.parse(localStorage.getItem(GUIDE_KEY)||'{}')}catch(_){return{}}}
-  function markGuideSeen(r){const s=_gs();s[r]=1;localStorage.setItem(GUIDE_KEY,JSON.stringify(s))}
-  function hasSeenGuide(r){const nr=r==='super_admin'?'admin':r;return !!_gs()[nr]}
+  const GUIDE_KEY = 'sld_first_visit'; // prosta flaga - czy użytkownik już widział poradnik
+  function markGuideSeen(){localStorage.setItem(GUIDE_KEY,'1')}
+  function hasSeenGuide(){return !!localStorage.getItem(GUIDE_KEY)}
 
   const GUIDE_DATA = {
     admin: {
@@ -4532,8 +4594,7 @@
   function closeGuideModal() {
     const el = document.getElementById('guide-modal');
     if (el) el.classList.remove('show');
-    const role = sessionStorage.getItem('sld_role') || 'user';
-    markGuideSeen(role);
+    markGuideSeen(); // zapamiętaj że użytkownik już widział poradnik
   }
 
   /* ── LOADER ───────────────────────────────────── */
