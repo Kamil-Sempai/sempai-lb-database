@@ -1530,7 +1530,7 @@
   const CLIENT_ID       = '287347548251-rp82vva0lt7i4rmjpnss3tca9dhuutf3.apps.googleusercontent.com';
   const ALLOWED_DOMAIN  = 'sempai.pl';
   const ADMIN_EMAILS    = ['kamil.zalewski@sempai.pl'];
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAqLMFFNf4gAEnZSnHqvsq05xmPgkrJZ0inPu2kExbqmjbumtCk0NjrHnq5FkR2X98YA/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYhHfilMGSLS-dxrSyMho7GWNwtURwX9XJH8vGAJvXQ8p_a1YrhNZxgrPfCBQfok6yxg/exec';
   let   SPREADSHEET_ID  = ''; // loaded dynamically from Apps Script on login
   const THEME_KEY      = 'sld_theme';
   const SESSION_KEY    = 'sld_user';
@@ -4458,16 +4458,11 @@
 
     if (!url) { alert('URL jest wymagany.'); return; }
 
-    console.log('[LB DEBUG] editPlace wysyłam:', { id, name, url, dofollow: dof, notes, linkDo });
     const data = await callAPI('editPlace', { id, name, url, dofollow: dof, notes, linkDo }, 'POST');
-    console.log('[LB DEBUG] editPlace odpowiedź:', JSON.stringify(data));
     if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
     document.getElementById('qedit-modal').remove();
     showToast('✅ Zmiany zapisane', 'success');
     await refreshDataInBackground();
-    // Sprawdź czy linkDo jest w odświeżonych danych
-    const savedItem = allPlacesRaw.find(r => String(r[0]) === String(id));
-    console.log('[LB DEBUG] po odświeżeniu item[14]:', savedItem ? savedItem[14] : 'nie znaleziono');
     renderFilteredPlaces();
   }
 
