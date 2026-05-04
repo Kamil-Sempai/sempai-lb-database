@@ -2641,8 +2641,6 @@
               <col class="col-type">
               <col class="col-status">
               <col class="col-num">
-              <col class="col-num">
-              <col class="col-num">
               <col class="col-date">
               <col class="col-actions">
             </colgroup>
@@ -3095,7 +3093,7 @@
     const idSet = new Set(ids.map(String));
     const rows = allPlacesRaw.filter(r => r[1] && idSet.has(String(r[0])));
 
-    const headers = ['URL', 'DoFollow', 'Pozyskany link'];
+    const headers = ['URL', 'Typ', 'DoFollow', 'Notatki', 'Pozyskany link'];
     const csvEscape = val => {
       const s = String(val ?? '');
       return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
@@ -3103,9 +3101,11 @@
     const lines = [
       headers.join(','),
       ...rows.map(r => [
-        r[1],
-        String(r[7]||'').toUpperCase() === 'TAK' ? 'TAK' : (String(r[7]||'').toUpperCase() === 'NIE' ? 'NIE' : ''),
-        ''
+        r[1],                                                                                              // URL
+        r[3] || '',                                                                                        // Typ
+        String(r[7]||'').toUpperCase() === 'TAK' ? 'TAK' : (String(r[7]||'').toUpperCase() === 'NIE' ? 'NIE' : ''), // DoFollow
+        r[13] || '',                                                                                       // Notatki
+        ''                                                                                                 // Pozyskany link — puste
       ].map(csvEscape).join(','))
     ];
 
