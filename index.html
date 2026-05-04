@@ -1957,9 +1957,17 @@
         callAPI('getSpreadsheetId'),
         new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 20000))
       ]);
-      // Retry once on Unauthorized (cold start / token timing issue)
+      // Retry 1: Unauthorized (cold start Apps Script)
       if (!idData || idData.error === 'Unauthorized') {
         await new Promise(r => setTimeout(r, 2000));
+        idData = await Promise.race([
+          callAPI('getSpreadsheetId'),
+          new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 20000))
+        ]);
+      }
+      // Retry 2: nadal błąd — daj Apps Script jeszcze 4 sekundy na rozgrzewkę
+      if (!idData || idData.error) {
+        await new Promise(r => setTimeout(r, 4000));
         idData = await Promise.race([
           callAPI('getSpreadsheetId'),
           new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 20000))
@@ -2197,9 +2205,9 @@
     return {
       id: row[0]||'', url: row[1]||'', name: row[2]||'',
       type: row[3]||'', kategoria: row[4]||'',
-      da: row[5]||'', dr: row[6]||'', dofollow: row[7]||'',
+      dofollow: row[7]||'', _da: row[5]||'', _dr: row[6]||'', // DA/DR zachowane w tle ale niewyświetlane
       status: row[8]||'', code: parseInt(row[9])||0,
-      lastCheck: row[10]||'', addedBy: row[11]||'', notes: row[13]||''
+      lastCheck: row[10]||'', addedBy: row[11]||'', notes: row[13]||'', linkDo: row[14]||''
     };
   }
 
@@ -2580,13 +2588,13 @@
             <div style="min-width:0">
               ${item.name ? `<div class="td-name">${escHtml(item.name)}</div>` : ''}
               <a href="${escHtml(item.url)}" target="_blank" rel="noopener" title="${escHtml(item.url)}">${escHtml(truncate(item.url, 44))}</a>
+              ${item.notes ? `<div style="font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px" title="${escAttr(item.notes)}">📝 ${escHtml(item.notes)}</div>` : ''}
+              ${item.linkDo ? `<div style="font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px"><a href="${escHtml(item.linkDo)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none" title="${escAttr(item.linkDo)}">🔗 Przykładowy wpis</a></div>` : ''}
             </div>
           </div>
         </td>
         <td><span class="${typePillClass(item.type)}">${typeIcon(item.type)} ${escHtml(item.type || '—')}</span> ${accBtn}</td>
         <td>${badge}</td>
-        <td class="td-num">${item.da || '—'}</td>
-        <td class="td-num">${item.dr || '—'}</td>
         <td class="td-num" style="text-align:center">${dofCell}</td>
         <td class="td-date">${item.lastCheck || '—'}</td>
         <td style="white-space:nowrap">
@@ -2645,8 +2653,6 @@
               <th>URL / Nazwa</th>
               <th>Typ</th>
               <th>Status</th>
-              <th style="text-align:center">DA</th>
-              <th style="text-align:center">DR</th>
               <th style="text-align:center">DoF.</th>
               <th>Dodano</th>
               <th></th>
@@ -4429,6 +4435,10 @@
           <div class="field-label">Notatki</div>
           <textarea class="field-textarea" id="qe-notes" rows="3">${escHtml(item[13]||'')}</textarea>
         </div>
+        <div class="field-row">
+          <div class="field-label">Przykładowy wpis <span style="font-size:10px;color:var(--text-3);font-weight:400">(link weryfikacyjny)</span></div>
+          <input class="field-input" id="qe-link" type="url" value="${escHtml(item[14]||'')}" placeholder="https://example.com/profil/...">
+        </div>
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('qedit-modal').remove()">Anuluj</button>
@@ -4440,14 +4450,15 @@
   }
 
   async function submitQuickEdit(id) {
-    const name  = document.getElementById('qe-name')?.value.trim();
-    const url   = document.getElementById('qe-url')?.value.trim();
-    const dof   = document.getElementById('qe-dof')?.value;
-    const notes = document.getElementById('qe-notes')?.value.trim();
+    const name   = document.getElementById('qe-name')?.value.trim();
+    const url    = document.getElementById('qe-url')?.value.trim();
+    const dof    = document.getElementById('qe-dof')?.value;
+    const notes  = document.getElementById('qe-notes')?.value.trim();
+    const linkDo = document.getElementById('qe-link')?.value.trim() || '';
 
     if (!url) { alert('URL jest wymagany.'); return; }
 
-    const data = await callAPI('editPlace', { id, name, url, dofollow: dof, notes }, 'POST');
+    const data = await callAPI('editPlace', { id, name, url, dofollow: dof, notes, linkDo }, 'POST');
     if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
     document.getElementById('qedit-modal').remove();
     showToast('✅ Zmiany zapisane', 'success');
