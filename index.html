@@ -4788,11 +4788,18 @@
       sub: 'Masz pelny dostep do wszystkich funkcji narzedzia.',
       sections: [
         { t: 'Baza miejsc LB', items: [
-          { i:'🔍', t:'Przegladanie bazy', d:'Filtruj po typie (zakladki), statusie HTTP lub szukaj po URL/nazwie.' },
-          { i:'✏️', t:'Edycja', d:'Kliknij ikone olowka przy miejscowce aby edytowac URL, nazwe, Dofollow i notatki.' },
-          { i:'🗑️', t:'Usuwanie', d:'Zaznacz checkboxy i uzyj paska akcji na dole ekranu.' },
-          { i:'📤', t:'Eksport CSV', d:'Zaznacz miejscowki i kliknij Eksportuj. Plik zawiera kolumny: URL, DoFollow, Pozyskany link (puste do wypelnienia).' },
-          { i:'⚠️', t:'Zgloszenia problemow', d:'Uzytkownik moze zglosic problem z miejscowka. Widzisz je w Weryfikacja -> Zgloszenia.' },
+          { i:'🔍', t:'Przegladanie bazy', d:'Filtruj po typie (zakladki u gory), statusie HTTP lub szukaj po URL/nazwie.' },
+          { i:'📝', t:'Notatki i przykladowy wpis', d:'Pod adresem URL widoczna jest notatka (ikona kartki) oraz link do przykladowego wpisu (ikona spinacza). Edytuj je przez przycisk olowka.' },
+          { i:'✏️', t:'Edycja miejscowki', d:'Kliknij ikone olowka - mozesz zmienic URL, nazwe, Dofollow, notatke oraz przykladowy wpis (link weryfikacyjny).' },
+          { i:'🗑️', t:'Usuwanie', d:'Zaznacz checkboxy przy miejscowkach i uzyj przycisku "Usun zaznaczone" w pasku akcji na dole ekranu.' },
+          { i:'⚠️', t:'Zgloszenia problemow', d:'Uzytkownik moze zglosic problem z miejscowka przyciskiem "Zglos". Widzisz je w Weryfikacja -> Zgloszenia.' },
+        ]},
+        { t: 'Eksport do XLSX', items: [
+          { i:'☑️', t:'Zaznaczanie miejscowek', d:'Kliknij checkbox przy miejscowce lub uzyj checkboxa w naglowku tabeli aby zaznaczyc wszystkie.' },
+          { i:'📊', t:'Jeden arkusz', d:'Wszystkie typy (oprocz Social Media) w jednej zakladce z kolumnami: URL, Typ, DoFollow, Notatki, Pozyskany link. Social Media trafia do osobnej zakladki.' },
+          { i:'📑', t:'Podzielony wg typu', d:'Kazdy typ miejscowki dostaje osobna zakladke (Profile, Ogloszenia, Katalogi). Kolumna Typ jest pominieta bo zastepuja ja nazwy zakladek.' },
+          { i:'📱', t:'Social Media - konta', d:'Po zaznaczeniu miejscowki Social Media, pod wierszem pojawia sie lista kont. Zaznacz ktore konta maja trafic do eksportu. Arkusz SM zawiera: URL, Login, Haslo, DoFollow, Pozyskany link.' },
+          { i:'💾', t:'Zapis lokalny lub Drive', d:'Kliknij Eksportuj -> wybierz opcje. Przy zapisie na Drive mozesz wybrac folder i nadac nazwe plikowi (domyslnie: LB Miesiac Rok).' },
         ]},
         { t: 'Weryfikacja', items: [
           { i:'📋', t:'Do weryfikacji', d:'Nowe miejscowki od specjalistow SEO. Uzupelnij dane i zatwierdz lub odrzuc.' },
@@ -4800,12 +4807,12 @@
           { i:'🚩', t:'Zgloszenia', d:'Problemy z istniejacymi miejscowkami. Usun z bazy lub zignoruj.' },
         ]},
         { t: 'Panel administracyjny', items: [
-          { i:'👥', t:'Uzytkownicy', d:'Zarzadzaj rolami. Mozesz dodawac e-maile z wyprzedzeniem. Konto z etykieta "host" to konto hostujace Apps Script.' },
-          { i:'🏷️', t:'Typy i kategorie', d:'Edytuj dostepne typy miejscowek i kategorie tematyczne.' },
+          { i:'👥', t:'Uzytkownicy', d:'Zarzadzaj rolami (Specjalista SEO / Weryfikator / Administrator). Konto oznaczone etykieta "host" to konto hostujace Apps Script.' },
+          { i:'🏷️', t:'Typy i kategorie', d:'Edytuj dostepne typy miejscowek i kategorie tematyczne dla Profili.' },
           { i:'⚙️', t:'Ustawienia', d:'Zarzadzaj hostami arkusza, wyjatkami emailowymi oraz ID aktywnego arkusza.' },
         ]},
         { t: 'Monitoring domen', items: [
-          { i:'📡', t:'Sprawdzanie', d:'Monitoruj statusy HTTP wszystkich miejsc. Sprawdz recznie lub ustaw harmonogram.' },
+          { i:'📡', t:'Sprawdzanie', d:'Monitoruj statusy HTTP wszystkich miejsc w bazie. Sprawdz recznie lub ustaw automatyczny harmonogram.' },
         ]},
       ]
     },
@@ -4814,20 +4821,27 @@
       sub: 'Twoim zadaniem jest sprawdzanie i zatwierdzanie nowych miejscowek.',
       sections: [
         { t: 'Baza miejsc LB', items: [
-          { i:'🔍', t:'Przegladanie', d:'Filtruj po typie, statusie lub szukaj po URL/nazwie.' },
-          { i:'✏️', t:'Edycja', d:'Mozesz edytowac URL, nazwe, Dofollow i notatki istniejacych miejscowek.' },
-          { i:'📤', t:'Eksport CSV', d:'Zaznacz miejscowki i kliknij Eksportuj.' },
+          { i:'🔍', t:'Przegladanie', d:'Filtruj po typie (kolorowe zakladki), statusie lub szukaj po URL/nazwie.' },
+          { i:'📝', t:'Notatki i przykladowy wpis', d:'Pod adresem URL widoczna jest notatka oraz link do przykladowego wpisu. Edytuj przez przycisk olowka.' },
+          { i:'✏️', t:'Edycja miejscowki', d:'Mozesz edytowac URL, nazwe, Dofollow, notatke i przykladowy wpis istniejacych miejscowek.' },
+          { i:'⚠️', t:'Zglos problem', d:'Przycisk "Zglos" przy miejscowce pozwala opisac problem. Ty rowniez mozesz go rozpatrzyc w zakladce Zgloszenia.' },
+        ]},
+        { t: 'Eksport do XLSX', items: [
+          { i:'☑️', t:'Zaznacz miejscowki', d:'Kliknij checkboxy przy wybranych miejscowkach. Po zaznaczeniu pojawia sie pasek akcji na dole.' },
+          { i:'📊', t:'Opcje eksportu', d:'Jeden arkusz - wszystkie typy w jednej zakladce + Social Media osobno. Podzielony wg typu - kazdy typ ma swoja zakladke.' },
+          { i:'📱', t:'Social Media - konta', d:'Po zaznaczeniu miejscowki SM, pod wierszem rozwija sie lista kont do zaznaczenia. Wybierz ktore konta eksportowac.' },
+          { i:'💾', t:'Zapis', d:'Pobierz lokalnie lub zapisz na Google Drive z wyborem folderu i nazwy pliku.' },
         ]},
         { t: 'Weryfikacja', items: [
           { i:'📋', t:'Do weryfikacji', d:'Kliknij "Sprawdz i uzupelnij", podaj Dofollow i kategorie. Miejscowka trafi do akceptacji admina.' },
           { i:'⏳', t:'Czeka na akceptacje', d:'Juz przez Ciebie sprawdzone. Czekaja na admina.' },
-          { i:'🚩', t:'Zgloszenia', d:'Problemy z miejscowkami. Mozesz usunac lub zignorowac zgloszenie.' },
+          { i:'🚩', t:'Zgloszenia', d:'Problemy z miejscowkami. Mozesz usunac z bazy lub zignorowac.' },
         ]},
         { t: 'Jak weryfikowac?', items: [
-          { i:'1️⃣', t:'Otworz "Do weryfikacji"', d:'Kliknij Weryfikacja w menu.' },
+          { i:'1️⃣', t:'Otworz "Do weryfikacji"', d:'Kliknij Weryfikacja w menu bocznym.' },
           { i:'2️⃣', t:'Sprawdz URL', d:'Otworz strone i sprawdz czy mozna tam umiescic link.' },
-          { i:'3️⃣', t:'Uzupelnij dane', d:'Kliknij "Sprawdz i uzupelnij" -> podaj Dofollow i kategorie.' },
-          { i:'4️⃣', t:'Wyslij do akceptacji', d:'Miejscowka trafi do admina do finalnej akceptacji.' },
+          { i:'3️⃣', t:'Uzupelnij dane', d:'Kliknij "Sprawdz i uzupelnij" -> podaj Dofollow i kategorie dla Profili.' },
+          { i:'4️⃣', t:'Wyslij do akceptacji', d:'Zatwierdzona przez Ciebie miejscowka trafi do admina do finalnej akceptacji.' },
         ]},
       ]
     },
@@ -4836,20 +4850,23 @@
       sub: 'Witaj w bazie miejsc link buildingowych Sempai!',
       sections: [
         { t: 'Baza miejsc LB', items: [
-          { i:'🔍', t:'Przegladanie', d:'Wszystkie zatwierdzone miejscowki. Filtruj po typie (kolorowe zakladki) lub szukaj po nazwie/URL.' },
-          { i:'💬', t:'Komentarze', d:'Mozesz dodawac komentarze do miejscowek, np. o problemach technicznych. Kliknij przycisk "Komentarze".' },
-          { i:'⚠️', t:'Zglos problem', d:'Kliknij "Zglos" przy miejscowce i opisz problem. Admin lub weryfikator sie tym zajmie.' },
-          { i:'📤', t:'Eksport do arkusza', d:'Zaznacz checkboxy -> Eksportuj. Arkusz zawiera URL, DoFollow i pusta kolumne "Pozyskany link" do wypelnienia.' },
+          { i:'🔍', t:'Przegladanie', d:'Wszystkie zatwierdzone miejscowki. Filtruj po typie (kolorowe zakladki u gory) lub szukaj po nazwie/URL.' },
+          { i:'📝', t:'Notatki i przykladowy wpis', d:'Pod adresem URL miejscowki widoczna jest notatka (szara ikona kartki) oraz przykladowy wpis (niebieski spinacz). To pomocne wskazowki jak korzystac z miejscowki.' },
+          { i:'💬', t:'Komentarze', d:'Kliknij przycisk "Komentarze" przy miejscowce - mozesz dodac uwage np. o zmianach w formularzu lub problemach technicznych.' },
+          { i:'⚠️', t:'Zglos problem', d:'Kliknij "Zglos" przy miejscowce i opisz co nie dziala. Admin lub weryfikator zajmie sie zgłoszeniem.' },
+        ]},
+        { t: 'Eksport do arkusza XLSX', items: [
+          { i:'☑️', t:'Zaznacz miejscowki', d:'Kliknij checkboxy przy wybranych miejscowkach. Pojawi sie pasek akcji na dole ekranu.' },
+          { i:'📊', t:'Jeden arkusz', d:'Wszystkie typy w jednej zakladce (URL, Typ, DoFollow, Notatki, Pozyskany link). Social Media trafia do osobnej zakladki z loginami i haslami.' },
+          { i:'📑', t:'Podzielony wg typu', d:'Kazdy typ miejscowki w osobnej zakladce - przydatne gdy planujesz dzialania na konkretnym typie.' },
+          { i:'📱', t:'Social Media - wybor kont', d:'Zaznacz miejscowke Social Media - pod nia rozwinie sie lista kont. Kliknij checkboxy przy kontach ktore chcesz eksportowac do arkusza.' },
+          { i:'💾', t:'Zapis lokalny lub Drive', d:'Kliknij Eksportuj -> wybierz opcje i format. Przy Drive mozesz wybrac folder i nadac wlasna nazwe (domyslnie: LB Miesiac Rok).' },
+          { i:'✍️', t:'Kolumna Pozyskany link', d:'W arkuszu jest pusta kolumna "Pozyskany link". Wklejaj tam linki do stron gdzie umiescilas/es link dla klienta.' },
         ]},
         { t: 'Dodawanie miejscowek', items: [
-          { i:'✅', t:'Sprawdzona przeze mnie', d:'Znasz te miejscowke? Podaj URL, nazwe, typ, Dofollow i link do przykladu. Trafi do weryfikacji admina.' },
-          { i:'🔎', t:'Do weryfikacji', d:'Znalazles interesujace miejsce ale nie sprawdziles szczegolów? Zglos do weryfikacji.' },
+          { i:'✅', t:'Sprawdzona przeze mnie', d:'Znasz te miejscowke? Podaj URL, nazwe, typ, Dofollow, notatke i przykladowy link. Trafi do akceptacji admina.' },
+          { i:'🔎', t:'Do weryfikacji', d:'Znalazles interesujace miejsce ale nie sprawdziles szczegolów? Zglos do weryfikacji - weryfikator uzupelni dane.' },
           { i:'🚫', t:'Duplikaty', d:'System sprawdza automatycznie czy domena juz jest w bazie i ostrzeze Cie przed dodaniem duplikatu.' },
-        ]},
-        { t: 'Jak pracowac z eksportem?', items: [
-          { i:'📋', t:'Zaznacz miejscowki', d:'Uzyj checkboxow w tabeli przy wybranych miejscowkach.' },
-          { i:'💾', t:'Eksportuj', d:'Kliknij Eksportuj -> pobierz plik CSV.' },
-          { i:'✍️', t:'Wypelnij "Pozyskany link"', d:'Otworz arkusz i wklejaj linki do stron gdzie udalo Ci sie umiescic link dla klienta.' },
         ]},
       ]
     }
