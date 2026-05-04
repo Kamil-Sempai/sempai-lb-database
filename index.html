@@ -1997,7 +1997,7 @@
       } else {
         // Fetch fresh
         const [placeValues, verifValues, cfgValues]=await Promise.all([
-          readSheet('baza_miejsc_lb!A:N'),
+          readSheet('baza_miejsc_lb!A:O'),
           readSheet('weryfikacja!A:I'),
           readSheet('konfiguracja!A:B')
         ]);
@@ -2054,7 +2054,7 @@
   async function refreshDataInBackground() {
     try {
       const [placeValues, verifValues, cfgValues]=await Promise.all([
-        readSheet('baza_miejsc_lb!A:N'),
+        readSheet('baza_miejsc_lb!A:O'),
         readSheet('weryfikacja!A:I'),
         readSheet('konfiguracja!A:B')
       ]);
@@ -2262,7 +2262,7 @@
     // ── 3. Fetch from Sheets API ──────────────────────────
     try {
       const [placeValues, verifValues, cfgValues] = await Promise.all([
-        readSheet('baza_miejsc_lb!A:N'),
+        readSheet('baza_miejsc_lb!A:O'),
         readSheet('weryfikacja!A:I'),
         readSheet('konfiguracja!A:B')
       ]);
@@ -4470,7 +4470,7 @@
     const toast = showToast('⟳ Synchronizacja z arkuszem…', 'info', 30000);
     try {
       const [placeValues, verifValues, cfgValues] = await Promise.all([
-        readSheetWithRetry('baza_miejsc_lb!A:N'),
+        readSheetWithRetry('baza_miejsc_lb!A:O'),
         readSheetWithRetry('weryfikacja!A:I'),
         readSheetWithRetry('konfiguracja!A:B')
       ]);
