@@ -4785,93 +4785,105 @@
   const GUIDE_DATA = {
     admin: {
       icon: '⚙️', title: 'Poradnik Administratora',
-      sub: 'Masz pelny dostep do wszystkich funkcji narzedzia.',
+      sub: 'Sempai LB Database to wewnetrzne narzedzie do zarzadzania baza miejsc link buildingowych.',
       sections: [
+        { t: 'Czym jest to narzedzie?', items: [
+          { i:'🎯', t:'Cel narzedzia', d:'Sempai LB Database to wewnetrzna baza miejsc w internecie, gdzie specjalisci SEO moga umiescic linki dla klientow. Narzedzie pozwala zbierac, weryfikowac i eksportowac miejsca takie jak portale ogloszeniowe, katalogi firm, profile Social Media czy strony z profilami uzytkownikow.' },
+          { i:'👥', t:'Role uzytkownikow', d:'W systemie sa trzy role. Administrator ma pelny dostep do wszystkiego. Weryfikator sprawdza i zatwierdza nowe miejsca. Specjalista SEO przegladac baze, dodaje nowe miejsca i eksportuje listy do pracy z klientami.' },
+          { i:'🔄', t:'Jak to dziala?', d:'Specjalista SEO dodaje nowe miejsce przez formularz. Jesli zna szczegoly, oznacza je jako sprawdzone i trafia do akceptacji admina. Jesli nie - trafia do weryfikacji, gdzie weryfikator uzupelnia dane. Admin akceptuje lub odrzuca zgłoszenie.' },
+        ]},
         { t: 'Baza miejsc LB', items: [
-          { i:'🔍', t:'Przegladanie bazy', d:'Filtruj po typie (zakladki u gory), statusie HTTP lub szukaj po URL/nazwie.' },
-          { i:'📝', t:'Notatki i przykladowy wpis', d:'Pod adresem URL widoczna jest notatka (ikona kartki) oraz link do przykladowego wpisu (ikona spinacza). Edytuj je przez przycisk olowka.' },
-          { i:'✏️', t:'Edycja miejscowki', d:'Kliknij ikone olowka - mozesz zmienic URL, nazwe, Dofollow, notatke oraz przykladowy wpis (link weryfikacyjny).' },
-          { i:'🗑️', t:'Usuwanie', d:'Zaznacz checkboxy przy miejscowkach i uzyj przycisku "Usun zaznaczone" w pasku akcji na dole ekranu.' },
-          { i:'⚠️', t:'Zgloszenia problemow', d:'Uzytkownik moze zglosic problem z miejscowka przyciskiem "Zglos". Widzisz je w Weryfikacja -> Zgloszenia.' },
+          { i:'🔍', t:'Przegladanie i filtrowanie', d:'Glowny widok narzedzia pokazuje wszystkie zatwierdzone miejsca. Mozna je filtrowac klikajac kolorowe zakladki typow (Profile, Social Media, Ogloszenia, Katalogi) lub wybierajac status HTTP z listy. Wyszukiwarka u gory pozwala znalezc miejsce po adresie URL lub nazwie.' },
+          { i:'📝', t:'Notatki i przykladowy wpis', d:'Pod adresem URL kazdego miejsca moga pojawic sie dodatkowe informacje: szara ikona kartki to notatka opisujaca specyfike miejsca (np. wymaga rejestracji, formularz na podstronie X). Niebieski spinacz to link do przykladowego wpisu - realny odnośnik potwierdzajacy ze link zostal tam faktycznie umieszczony.' },
+          { i:'✏️', t:'Edycja miejscowki', d:'Klikajac ikone olowka obok dowolnej miejscowki mozesz edytowac jej dane: adres URL, nazwe, czy link jest dofollow, notatke opisujaca miejsce oraz przykladowy wpis. Te zmiany sa zapisywane natychmiast w bazie danych.' },
+          { i:'🗑️', t:'Usuwanie miejscowek', d:'Zaznacz checkboxy po lewej stronie przy wybranych miejscowkach (lub uzyj checkboxa w naglowku tabeli aby zaznaczyc wszystkie). Na dole ekranu pojawi sie pasek akcji z przyciskiem Usun zaznaczone. Usuniecia sa nieodwracalne - upewnij sie ze wybierasz wlasciwe miejsca.' },
+          { i:'⚠️', t:'Zgloszenia problemow', d:'Kazdy uzytkownik moze zglosic problem z miejscowka przyciskiem Zglos. Zgloszenia trafiaja do zakladki Weryfikacja -> Zgloszenia. Jako admin mozesz usunac miejscowke z bazy lub zignorowac zgloszenie jesli jest nieuzasadnione.' },
         ]},
-        { t: 'Eksport do XLSX', items: [
-          { i:'☑️', t:'Zaznaczanie miejscowek', d:'Kliknij checkbox przy miejscowce lub uzyj checkboxa w naglowku tabeli aby zaznaczyc wszystkie.' },
-          { i:'📊', t:'Jeden arkusz', d:'Wszystkie typy (oprocz Social Media) w jednej zakladce z kolumnami: URL, Typ, DoFollow, Notatki, Pozyskany link. Social Media trafia do osobnej zakladki.' },
-          { i:'📑', t:'Podzielony wg typu', d:'Kazdy typ miejscowki dostaje osobna zakladke (Profile, Ogloszenia, Katalogi). Kolumna Typ jest pominieta bo zastepuja ja nazwy zakladek.' },
-          { i:'📱', t:'Social Media - konta', d:'Po zaznaczeniu miejscowki Social Media, pod wierszem pojawia sie lista kont. Zaznacz ktore konta maja trafic do eksportu. Arkusz SM zawiera: URL, Login, Haslo, DoFollow, Pozyskany link.' },
-          { i:'💾', t:'Zapis lokalny lub Drive', d:'Kliknij Eksportuj -> wybierz opcje. Przy zapisie na Drive mozesz wybrac folder i nadac nazwe plikowi (domyslnie: LB Miesiac Rok).' },
+        { t: 'Eksport miejsc do XLSX', items: [
+          { i:'☑️', t:'Jak zaznaczyc miejsca do eksportu', d:'Kliknij checkbox po lewej stronie wiersza aby zaznaczyc dane miejsce. Mozesz zaznaczyc wiele miejsc naraz lub uzyc checkboxa w naglowku tabeli aby zaznaczyc wszystkie widoczne. Po zaznaczeniu co najmniej jednego miejsca, na dole ekranu pojawia sie pasek akcji z przyciskiem Eksportuj.' },
+          { i:'📊', t:'Opcja: Jeden arkusz', d:'Wszystkie zaznaczone miejsca (oprocz Social Media) laduja do jednej zakladki o nazwie Miejscowki z kolumnami: URL, Typ, DoFollow, Notatki, Pozyskany link. Miejsca Social Media trafiaja automatycznie do osobnej zakladki o nazwie Social Media z loginami i haslami do kont.' },
+          { i:'📑', t:'Opcja: Podzielony wedlug typu', d:'Kazdy typ miejsca dostaje wlasna zakladke w arkuszu - np. zakladka Profile, zakladka Ogloszenia itd. Kolumna Typ jest pominieta bo zastepuja ja nazwy zakladek. Ta opcja jest przydatna gdy planujesz dzialania na konkretnych typach miejsc i chcesz miec porzadek w arkuszu.' },
+          { i:'📱', t:'Social Media - wybor kont do eksportu', d:'Social Media to szczegolny typ miejsca - kazdy portal ma przypisane konta (loginy i hasla). Po zaznaczeniu miejscowki Social Media pod jej wierszem rozwija sie lista dostepnych kont z checkboxami. Zaznacz ktore konta maja trafic do arkusza. Jesli nie zaznaczysz zadnego, eksportowane beda wszystkie konta przypisane do tego portalu.' },
+          { i:'💾', t:'Zapis lokalny lub na Google Drive', d:'Po kliknieciu Eksportuj wybierz sposob zapisu. Lokalnie - plik XLSX zostanie pobrany na Twoj dysk od razu. Google Drive - otworzy sie okno wyboru folderu na Twoim Dysku Google, gdzie mozesz nawigowac po folderach i wybrac miejsce zapisu. Mozna tez nadac wlasna nazwe pliku (domyslnie: LB Miesiac Rok, np. LB Maj 2026).' },
         ]},
-        { t: 'Weryfikacja', items: [
-          { i:'📋', t:'Do weryfikacji', d:'Nowe miejscowki od specjalistow SEO. Uzupelnij dane i zatwierdz lub odrzuc.' },
-          { i:'⏳', t:'Czeka na akceptacje', d:'Sprawdzone przez weryfikatora, czekaja na Twoja akceptacje.' },
-          { i:'🚩', t:'Zgloszenia', d:'Problemy z istniejacymi miejscowkami. Usun z bazy lub zignoruj.' },
+        { t: 'Weryfikacja nowych miejsc', items: [
+          { i:'📋', t:'Do weryfikacji', d:'Tu trafiaja nowe miejsca dodane przez specjalistow SEO z trybem Do weryfikacji - czyli takie ktorych nie sprawdzili samodzielnie. Twoim zadaniem lub weryfikatora jest otworzyc strone, sprawdzic czy faktycznie mozna tam umiescic link, a nastepnie uzupelnic brakujace dane (Dofollow, kategoria) i zatwierdzic lub odrzucic zgloszenie.' },
+          { i:'⏳', t:'Czeka na akceptacje', d:'Tu trafiaja miejsca ktore zostaly juz sprawdzone przez weryfikatora i czekaja na Twoja ostateczna akceptacje. Mozesz je zatwierdzic - wtedy trafia do glownej bazy i staja sie widoczne dla wszystkich - albo odrzucic z podaniem powodu.' },
+          { i:'🚩', t:'Zgloszenia', d:'Lista zgloszen problemow z istniejacymi miejscami w bazie. Mozesz usunac miejsce z bazy (jesli np. strona juz nie istnieje) lub zignorowac zgloszenie (jesli problem nie jest istotny). Widoczne jest kto i kiedy zglosil problem oraz opis problemu.' },
         ]},
         { t: 'Panel administracyjny', items: [
-          { i:'👥', t:'Uzytkownicy', d:'Zarzadzaj rolami (Specjalista SEO / Weryfikator / Administrator). Konto oznaczone etykieta "host" to konto hostujace Apps Script.' },
-          { i:'🏷️', t:'Typy i kategorie', d:'Edytuj dostepne typy miejscowek i kategorie tematyczne dla Profili.' },
-          { i:'⚙️', t:'Ustawienia', d:'Zarzadzaj hostami arkusza, wyjatkami emailowymi oraz ID aktywnego arkusza.' },
+          { i:'👥', t:'Uzytkownicy', d:'Lista wszystkich osob ktore logowaly sie do narzedzia. Mozesz zmienic role uzytkownika wybierajac z listy (Specjalista SEO, Weryfikator, Administrator). Mozesz tez dodac adres email z wyprzedzeniem zanim dana osoba sie zaloguje - wtedy od razu dostanie wlasciwa role. Konto oznaczone etykieta host to konto na ktorym hostowany jest Apps Script (backend narzedzia).' },
+          { i:'🏷️', t:'Typy i kategorie', d:'Mozesz dodawac i usuwac typy miejscowek (np. dodac nowy typ) oraz kategorie tematyczne ktore sa dostepne przy dodawaniu Profili. Zmiany sa od razu widoczne w formularzach dla wszystkich uzytkownikow.' },
+          { i:'🔄', t:'Migracja danych', d:'Funkcja do przeniesienia calej bazy danych na inny arkusz Google Sheets - np. na inne konto firmowe. Proces jest prowadzony krokowo z weryfikacja przed kazdym etapem.' },
+          { i:'⚙️', t:'Ustawienia', d:'Zarzadzanie hostami arkusza (emaile z automatycznym pelnym dostepem), wyjatki emailowe (dostep dla osob spoza domeny sempai.pl) oraz mozliwosc zmiany aktywnego arkusza Google Sheets bez modyfikowania kodu.' },
         ]},
         { t: 'Monitoring domen', items: [
-          { i:'📡', t:'Sprawdzanie', d:'Monitoruj statusy HTTP wszystkich miejsc w bazie. Sprawdz recznie lub ustaw automatyczny harmonogram.' },
+          { i:'📡', t:'Na czym polega monitoring', d:'Narzedzie moze automatycznie sprawdzac czy adresy URL w bazie sa dostepne - czyli czy strony wciaz dzialaja. Sprawdzenie polega na wysłaniu zapytania HTTP i odczytaniu kodu odpowiedzi (200 = OK, 404 = nie znaleziono, 5xx = blad serwera).' },
+          { i:'🕒', t:'Harmonogram automatyczny', d:'Mozesz ustawic ze sprawdzanie odbywa sie automatycznie co 6, 12 lub 24 godziny albo raz w tygodniu. System wyśle alert mailowy jesli jakies miejsce jest niedostepne przez ponad 7 dni z rzedu.' },
+          { i:'🔍', t:'Sprawdzanie reczne', d:'Mozesz tez sprawdzic wybrane domeny recznie - zaznacz je checkboxami i kliknij Sprawdz zaznaczone, lub kliknij Sprawdz teraz aby sprawdzic wszystkie miejsca w bazie od razu.' },
         ]},
       ]
     },
     weryfikator: {
       icon: '✅', title: 'Poradnik Weryfikatora',
-      sub: 'Twoim zadaniem jest sprawdzanie i zatwierdzanie nowych miejscowek.',
+      sub: 'Sempai LB Database to wewnetrzne narzedzie do zarzadzania baza miejsc link buildingowych.',
       sections: [
+        { t: 'Czym jest to narzedzie i Twoja rola?', items: [
+          { i:'🎯', t:'Cel narzedzia', d:'Sempai LB Database to wewnetrzna baza miejsc w internecie, gdzie specjalisci SEO moga umiescic linki dla klientow - portale ogloszeniowe, katalogi firm, profile Social Media i inne. Twoja rola jako weryfikatora to sprawdzanie i zatwierdzanie nowych miejsc zanim trafia do glownej bazy.' },
+          { i:'🔄', t:'Twoje zadanie w procesie', d:'Gdy specjalista SEO znajdzie nowe miejsce i nie jest pewny szczegolów, zgłasza je Do weryfikacji. Ty wchodzisz na strone, sprawdzasz czy faktycznie mozna tam umiescic link, uzupelniasz brakujace dane (czy link jest dofollow, jaka kategoria tematyczna) i wysylasz do akceptacji admina. Dopiero admin zatwierdza lub odrzuca miejsce.' },
+        ]},
         { t: 'Baza miejsc LB', items: [
-          { i:'🔍', t:'Przegladanie', d:'Filtruj po typie (kolorowe zakladki), statusie lub szukaj po URL/nazwie.' },
-          { i:'📝', t:'Notatki i przykladowy wpis', d:'Pod adresem URL widoczna jest notatka oraz link do przykladowego wpisu. Edytuj przez przycisk olowka.' },
-          { i:'✏️', t:'Edycja miejscowki', d:'Mozesz edytowac URL, nazwe, Dofollow, notatke i przykladowy wpis istniejacych miejscowek.' },
-          { i:'⚠️', t:'Zglos problem', d:'Przycisk "Zglos" przy miejscowce pozwala opisac problem. Ty rowniez mozesz go rozpatrzyc w zakladce Zgloszenia.' },
+          { i:'🔍', t:'Przegladanie i filtrowanie', d:'Glowny widok pokazuje wszystkie zatwierdzone miejsca. Filtruj klikajac kolorowe zakladki typow (Profile, Social Media, Ogloszenia, Katalogi) lub wybierajac status HTTP. Wyszukiwarka pozwala znalezc miejsce po URL lub nazwie.' },
+          { i:'📝', t:'Notatki i przykladowy wpis', d:'Pod URL miejscowki mozesz zobaczyc notatke (szara ikona kartki) z informacjami o specyfice miejsca oraz przykladowy wpis (niebieski spinacz) - link potwierdzajacy ze ktos faktycznie umiescil tam link. Obie informacje sa przydatne przy planowaniu dzialan.' },
+          { i:'✏️', t:'Edycja miejscowki', d:'Jako weryfikator mozesz edytowac istniejace miejsca - kliknij ikone olowka aby zmienic URL, nazwe, Dofollow, notatke lub przykladowy wpis. Przycisk usuwania jest dostepny tylko dla administratorow.' },
+          { i:'⚠️', t:'Zglos lub rozpatrz problem', d:'Przycisk Zglos przy kazdej miejscowce pozwala opisac co nie dziala. W zakladce Weryfikacja -> Zgloszenia mozesz rowniez rozpatrywac zgloszenia innych uzytkownikow - usunac miejsce lub zignorowac zgloszenie.' },
         ]},
-        { t: 'Eksport do XLSX', items: [
-          { i:'☑️', t:'Zaznacz miejscowki', d:'Kliknij checkboxy przy wybranych miejscowkach. Po zaznaczeniu pojawia sie pasek akcji na dole.' },
-          { i:'📊', t:'Opcje eksportu', d:'Jeden arkusz - wszystkie typy w jednej zakladce + Social Media osobno. Podzielony wg typu - kazdy typ ma swoja zakladke.' },
-          { i:'📱', t:'Social Media - konta', d:'Po zaznaczeniu miejscowki SM, pod wierszem rozwija sie lista kont do zaznaczenia. Wybierz ktore konta eksportowac.' },
-          { i:'💾', t:'Zapis', d:'Pobierz lokalnie lub zapisz na Google Drive z wyborem folderu i nazwy pliku.' },
+        { t: 'Eksport miejsc do XLSX', items: [
+          { i:'☑️', t:'Jak zaznaczyc miejsca', d:'Kliknij checkbox po lewej stronie wiersza aby zaznaczyc miejsce. Mozesz zaznaczyc wiele naraz lub wszystkie checkboxem w naglowku. Po zaznaczeniu pojawia sie pasek akcji na dole z przyciskiem Eksportuj.' },
+          { i:'📊', t:'Opcja: Jeden arkusz', d:'Wszystkie zaznaczone miejsca (oprocz Social Media) trafiaja do jednej zakladki z kolumnami: URL, Typ, DoFollow, Notatki, Pozyskany link. Social Media laduje do osobnej zakladki z loginami i haslami.' },
+          { i:'📑', t:'Opcja: Podzielony wedlug typu', d:'Kazdy typ miejsca dostaje osobna zakladke w arkuszu. Przydatne gdy chcesz miec porzadek w arkuszu roboczym i pracowac osobno na roznychh typach miejsc.' },
+          { i:'📱', t:'Social Media - wybor kont', d:'Po zaznaczeniu miejsca Social Media, pod jego wierszem rozwija sie lista przypisanych kont. Zaznacz checkboxami ktore konta maja trafic do eksportu.' },
+          { i:'💾', t:'Zapis lokalny lub Drive', d:'Kliknij Eksportuj i wybierz sposob: pobranie na dysk lokalny lub zapis na Google Drive z wyborem folderu. Mozna nadac wlasna nazwe pliku (domyslnie: LB Miesiac Rok).' },
         ]},
-        { t: 'Weryfikacja', items: [
-          { i:'📋', t:'Do weryfikacji', d:'Kliknij "Sprawdz i uzupelnij", podaj Dofollow i kategorie. Miejscowka trafi do akceptacji admina.' },
-          { i:'⏳', t:'Czeka na akceptacje', d:'Juz przez Ciebie sprawdzone. Czekaja na admina.' },
-          { i:'🚩', t:'Zgloszenia', d:'Problemy z miejscowkami. Mozesz usunac z bazy lub zignorowac.' },
-        ]},
-        { t: 'Jak weryfikowac?', items: [
-          { i:'1️⃣', t:'Otworz "Do weryfikacji"', d:'Kliknij Weryfikacja w menu bocznym.' },
-          { i:'2️⃣', t:'Sprawdz URL', d:'Otworz strone i sprawdz czy mozna tam umiescic link.' },
-          { i:'3️⃣', t:'Uzupelnij dane', d:'Kliknij "Sprawdz i uzupelnij" -> podaj Dofollow i kategorie dla Profili.' },
-          { i:'4️⃣', t:'Wyslij do akceptacji', d:'Zatwierdzona przez Ciebie miejscowka trafi do admina do finalnej akceptacji.' },
+        { t: 'Jak weryfikowac nowe miejsca?', items: [
+          { i:'1️⃣', t:'Krok 1: Przejdz do weryfikacji', d:'W menu bocznym kliknij Weryfikacja. Domyslnie otworzy sie zakladka Do weryfikacji z lista miejsc czekajacych na sprawdzenie. Kazde zgloszenie zawiera adres URL, nazwe i informacje kto i kiedy je dodal.' },
+          { i:'2️⃣', t:'Krok 2: Sprawdz strone', d:'Kliknij adres URL zgloszenia aby otworzyc strone w nowej karcie. Sprawdz czy mozna tam faktycznie umiescic link - szukaj formularzy rejestracji, sekcji dla uzytkownikow, miejsc gdzie mozna dodac profil lub wpis z odnosnikiem.' },
+          { i:'3️⃣', t:'Krok 3: Uzupelnij dane i wyslij', d:'Kliknij przycisk Sprawdz i uzupelnij przy danym zgloszeniu. Wypelnij pole Dofollow (TAK jesli strona przekazuje moc linku, NIE jesli ma atrybut nofollow) oraz wybierz kategorie tematyczna dla Profili. Mozesz dodac notatke. Kliknij Zatwierdz i wyslij do akceptacji.' },
+          { i:'4️⃣', t:'Co dalej?', d:'Zweryfikowane miejsce trafia do zakladki Czeka na akceptacje gdzie administrator podejmuje ostateczna decyzje. Mozesz tez odrzucic zgloszenie jesli strona nie nadaje sie do link buildingu - wpisz powod odrzucenia.' },
         ]},
       ]
     },
     user: {
       icon: '🔗', title: 'Poradnik Specjalisty SEO',
-      sub: 'Witaj w bazie miejsc link buildingowych Sempai!',
+      sub: 'Sempai LB Database to wewnetrzne narzedzie do zarzadzania baza miejsc link buildingowych.',
       sections: [
-        { t: 'Baza miejsc LB', items: [
-          { i:'🔍', t:'Przegladanie', d:'Wszystkie zatwierdzone miejscowki. Filtruj po typie (kolorowe zakladki u gory) lub szukaj po nazwie/URL.' },
-          { i:'📝', t:'Notatki i przykladowy wpis', d:'Pod adresem URL miejscowki widoczna jest notatka (szara ikona kartki) oraz przykladowy wpis (niebieski spinacz). To pomocne wskazowki jak korzystac z miejscowki.' },
-          { i:'💬', t:'Komentarze', d:'Kliknij przycisk "Komentarze" przy miejscowce - mozesz dodac uwage np. o zmianach w formularzu lub problemach technicznych.' },
-          { i:'⚠️', t:'Zglos problem', d:'Kliknij "Zglos" przy miejscowce i opisz co nie dziala. Admin lub weryfikator zajmie sie zgłoszeniem.' },
+        { t: 'Czym jest to narzedzie i jak mozesz z niego korzystac?', items: [
+          { i:'🎯', t:'Cel narzedzia', d:'Sempai LB Database to wewnetrzna baza miejsc w internecie gdzie mozna umiescic linki dla klientow - portale ogloszeniowe, katalogi firm, profile Social Media, strony z profilami uzytkownikow i inne. Dzieki temu narzedziu caly zespol korzysta z tej samej, aktualnej i sprawdzonej bazy miejsc zamiast szukac ich od nowa za kazdym razem.' },
+          { i:'🔄', t:'Twoja rola w tym procesie', d:'Jako Specjalista SEO masz dostep do wszystkich zatwierdzonych miejsc w bazie. Mozesz przegladac je, dodawac komentarze, zgłaszac problemy i eksportowac wybrane miejsca do arkusza Excel z ktorego bedziesz realizowac dzialania link buildingowe dla klienta. Mozesz tez zgłaszac nowe miejsca ktore odkryłeś.' },
         ]},
-        { t: 'Eksport do arkusza XLSX', items: [
-          { i:'☑️', t:'Zaznacz miejscowki', d:'Kliknij checkboxy przy wybranych miejscowkach. Pojawi sie pasek akcji na dole ekranu.' },
-          { i:'📊', t:'Jeden arkusz', d:'Wszystkie typy w jednej zakladce (URL, Typ, DoFollow, Notatki, Pozyskany link). Social Media trafia do osobnej zakladki z loginami i haslami.' },
-          { i:'📑', t:'Podzielony wg typu', d:'Kazdy typ miejscowki w osobnej zakladce - przydatne gdy planujesz dzialania na konkretnym typie.' },
-          { i:'📱', t:'Social Media - wybor kont', d:'Zaznacz miejscowke Social Media - pod nia rozwinie sie lista kont. Kliknij checkboxy przy kontach ktore chcesz eksportowac do arkusza.' },
-          { i:'💾', t:'Zapis lokalny lub Drive', d:'Kliknij Eksportuj -> wybierz opcje i format. Przy Drive mozesz wybrac folder i nadac wlasna nazwe (domyslnie: LB Miesiac Rok).' },
-          { i:'✍️', t:'Kolumna Pozyskany link', d:'W arkuszu jest pusta kolumna "Pozyskany link". Wklejaj tam linki do stron gdzie umiescilas/es link dla klienta.' },
+        { t: 'Przegladanie bazy miejsc', items: [
+          { i:'🔍', t:'Filtrowanie i wyszukiwanie', d:'Na gorze strony widoczne sa kolorowe zakladki z typami miejsc (Profile, Social Media, Ogloszenia, Katalogi). Kliknij zakladke aby pokazac tylko dany typ. Mozesz tez filtrowac po statusie HTTP (np. tylko OK - dzialajace strony) lub wpisac fraze w wyszukiwarke aby znalezc miejsce po nazwie lub adresie URL.' },
+          { i:'📝', t:'Notatki i przykladowy wpis', d:'Przy niektorych miejscach pod adresem URL widac dodatkowe informacje. Szara ikona kartki z tekstem to notatka - zawiera wazne informacje o tym miejscu, np. ze rejestracja wymaga firmowego emaila lub ze formularz jest na konkretnej podstronie. Niebieski spinacz to przykladowy wpis - klikajac zobaczysz realny link umieszczony przez kogos z zespolu, co potwierdza ze miejsce dziala i pokazuje jak powinien wygladac wpis.' },
+          { i:'💬', t:'Komentarze', d:'Kliknij przycisk Komentarze przy dowolnym miejscu aby zobaczyc lub dodac komentarz. To dobre miejsce na dzielenie sie informacjami z zespolem np. ze formularz rejestracji zmienil sie, ze moderacja trwa dluzej niz zwykle albo ze strona wymaga konkretnego formatu linku. Komentarze widza wszyscy uzytkownicy.' },
+          { i:'⚠️', t:'Zgłaszanie problemow', d:'Jesli odkryjesz ze jakies miejsce nie dziala (strona nie odpowiada, link zostal usuniety, formularz jest zepsuty) kliknij przycisk Zglos i opisz problem. Administrator lub weryfikator zajmie sie zgłoszeniem i zdecyduje czy usunac miejsce z bazy.' },
         ]},
-        { t: 'Dodawanie miejscowek', items: [
-          { i:'✅', t:'Sprawdzona przeze mnie', d:'Znasz te miejscowke? Podaj URL, nazwe, typ, Dofollow, notatke i przykladowy link. Trafi do akceptacji admina.' },
-          { i:'🔎', t:'Do weryfikacji', d:'Znalazles interesujace miejsce ale nie sprawdziles szczegolów? Zglos do weryfikacji - weryfikator uzupelni dane.' },
-          { i:'🚫', t:'Duplikaty', d:'System sprawdza automatycznie czy domena juz jest w bazie i ostrzeze Cie przed dodaniem duplikatu.' },
+        { t: 'Eksport miejsc do arkusza XLSX', items: [
+          { i:'☑️', t:'Jak zaznaczyc miejsca do eksportu', d:'Po lewej stronie kazdego wiersza jest checkbox (kwadratowe pole). Kliknij go aby zaznaczyc dane miejsce - wiersz podswietli sie na niebiesko. Mozesz zaznaczyc dowolna ilosc miejsc. Jesli chcesz zaznaczyc wszystkie naraz, kliknij checkbox w naglowku tabeli (w pierwszej kolumnie). Po zaznaczeniu co najmniej jednego miejsca na dole ekranu pojawi sie pasek akcji.' },
+          { i:'📊', t:'Eksport: Jeden arkusz', d:'Wybierz te opcje gdy chcesz miec wszystkie typy miejsc w jednym pliku. Arkusz bedzie mial zakladke Miejscowki z kolumnami URL, Typ, DoFollow, Notatki, Pozyskany link dla wszystkich miejsc oprocz Social Media. Social Media automatycznie trafi do osobnej zakladki z loginami i haslami - to wazne bo konta SM sa poufne.' },
+          { i:'📑', t:'Eksport: Podzielony wedlug typu', d:'Wybierz te opcje gdy chcesz miec porzadek w arkuszu i pracowac oddzielnie na roznych typach miejsc. Kazdy typ dostanie swoja zakladke np. Profile, Ogloszenia, Katalogi. Kolumna Typ jest pominieta bo wynika z nazwy zakladki. Social Media jak zawsze trafia do osobnej zakladki.' },
+          { i:'📱', t:'Social Media - wybieranie kont do eksportu', d:'Kiedy zaznaczysz miejscowke typu Social Media, pod jej wierszem automatycznie rozwinie sie lista kont przypisanych do tego portalu. Kazde konto to osobny checkbox z loginem. Zaznacz te konta ktore chcesz uzyc w biezacych dzialaniach. Jesli nie zaznaczysz zadnego, do arkusza trafia wszystkie konta. Mozesz zaznaczyc konta z kilku roznych portali SM jednoczesnie.' },
+          { i:'💾', t:'Zapis na dysk lokalny', d:'Kliknij Eksportuj, a nastepnie Pobierz na dysk lokalny. Plik XLSX zostanie pobrany na Twoj komputer. Domyslna nazwa pliku to LB Miesiac Rok (np. LB Maj 2026) - mozesz ja zmienic przed pobraniem.' },
+          { i:'☁️', t:'Zapis na Google Drive', d:'Kliknij Eksportuj, a nastepnie Zapisz na Google Drive. Otworzy sie okno z przegladarka Twojego Dysku Google. Mozesz nawigowac po folderach klikajac na nie, tworzyc nowe foldery i wybrac docelowe miejsce zapisu. Wpisz nazwe pliku i kliknij Zapisz tutaj.' },
+          { i:'✍️', t:'Kolumna Pozyskany link', d:'W kazdym eksportowanym arkuszu jest pusta kolumna Pozyskany link. Wypelniaj ja na biezaco w trakcie pracy - wklejaj tu adres URL strony gdzie umiesciłes link dla klienta. Dzieki temu masz porzadna dokumentacje dzialan i mozesz latwo sprawdzic postep pracy.' },
+        ]},
+        { t: 'Dodawanie nowych miejsc do bazy', items: [
+          { i:'✅', t:'Sprawdzona przeze mnie', d:'Kliknij Dodaj miejscowke w menu i wybierz tryb Sprawdzona przeze mnie. Wybierz ten tryb gdy sam sprawdziłes miejsce i wiesz ze mozna tam umiescic link. Wypelnij URL, nazwe, typ, czy dofollow, opcjonalna notatke i koniecznie wklej przykladowy link - realny odnośnik ktory umiesciłes lub widziałes na tej stronie. Takie zgloszenie trafia do szybkiej akceptacji admina.' },
+          { i:'🔎', t:'Do weryfikacji', d:'Wybierz ten tryb gdy znalazłes interesujace miejsce ale nie masz czasu lub mozliwosci zeby je dokladnie sprawdzic. Wystarczy wpisac URL i opcjonalnie nazwe i notatke. Zgloszenie trafi do weryfikatora ktory sprawdzi szczegoly i uzupelni brakujace dane.' },
+          { i:'🚫', t:'Ochrona przed duplikatami', d:'System automatycznie sprawdza czy domena ktora wpisujesz juz istnieje w bazie lub jest w trakcie weryfikacji. Jesli tak - zobaczysz ostrzezenie z informacja o istniejacym wpisie. Mozesz mimo to dodac zgloszenie jesli masz dobry powod, ale domyslnie system zapyta czy na pewno chcesz to zrobic.' },
         ]},
       ]
     }
   };
-
   function openGuideModal(role) {
     const r = role || sessionStorage.getItem('sld_role') || 'user';
     const nr = r === 'super_admin' ? 'admin' : r;
