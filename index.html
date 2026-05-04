@@ -2106,7 +2106,7 @@
     if(currentUser?.access_token){try{google.accounts.oauth2.revoke(currentUser.access_token,()=>{})}catch(_){}}
     currentUser=null;
     sessionStorage.clear();
-    localStorage.removeItem('sld_data_v2'); // wyczysc cache danych
+    localStorage.removeItem('sld_data_v3'); // wyczysc cache danych
     document.getElementById('data-loading-screen').classList.remove('show');
     document.getElementById('login-page').style.display='';
     // Wymus wybor konta przy nastepnym logowaniu
@@ -2129,7 +2129,7 @@
   let searchTimer  = null;
   let allPlacesRaw = []; // all rows from sheet — filtering done client-side (instant)
   let allVerifRaw  = []; // verifikation rows — for duplicate checking
-  const DATA_KEY   = 'sld_data_v2';
+  const DATA_KEY   = 'sld_data_v3';
   const DATA_TTL   = 5 * 60 * 1000; // 5 min stale-while-revalidate
 
   /* Apps Script — tylko do ZAPISU (POST) */
