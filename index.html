@@ -1596,6 +1596,7 @@
     placeSelected.clear();
     document.querySelectorAll('.row-cb.checked').forEach(cb => cb.classList.remove('checked'));
     document.querySelectorAll('tr[style*="rgba(59,123,255"]').forEach(tr => tr.style.background = '');
+    document.querySelectorAll('[id^="sm-acc-row-"]').forEach(tr => tr.remove());
     const _thBox = document.getElementById('th-cb-box');
     if(_thBox) _thBox.classList.remove('checked');
     const _bar = document.getElementById('del-action-bar');
@@ -2618,8 +2619,7 @@
       const isSM    = item.type === 'Social Media';
       const accBtn  = isSM ? `<span class="accounts-btn" onclick="openAccountsModal('${escAttr(item.id)}','${escAttr(item.url)}','${escAttr(item.name||'')}')" >👤 Konta</span>` : '';
       const smAccounts = isSM ? (smAccountsCache[String(item.id)] || []) : [];
-      const smSelCount = isSM ? (smSelected[String(item.id)] ? smSelected[String(item.id)].size : 0) : 0;
-      const smPickBtn = isSM ? `<span class="sm-pick-btn${smSelCount > 0 ? ' sm-pick-active' : ''}" onclick="toggleSmPicker('${escAttr(item.id)}',event)" title="Wybierz konta do eksportu">${smSelCount > 0 ? '✓ ' + smSelCount : '+ eksport'}</span>` : '';
+
       const favicon = getFavicon(item.url);
       const favImg  = favicon ? `<img src="${favicon}" width="16" height="16" style="border-radius:3px;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:7px" onerror="this.remove()">` : '';
       const rowId   = 'row-' + escAttr(item.id);
@@ -2642,7 +2642,7 @@
             </div>
           </div>
         </td>
-        <td><span class="${typePillClass(item.type)}">${typeIcon(item.type)} ${escHtml(item.type || '—')}</span> ${accBtn} ${smPickBtn}</td>
+        <td><span class="${typePillClass(item.type)}">${typeIcon(item.type)} ${escHtml(item.type || '—')}</span> ${accBtn}</td>
         <td>${badge}</td>
         <td class="td-num" style="text-align:center">${dofCell}</td>
         <td class="td-date">${item.lastCheck || '—'}</td>
@@ -3070,12 +3070,75 @@
     const cb  = document.getElementById('pcb-'+id);
     const row = document.getElementById('row-'+id);
     if (cb)  cb.classList.toggle('checked', placeSelected.has(sid));
-    if (row) {
-      const role = sessionStorage.getItem('sld_role');
-      const isAdm = (role==='admin'||role==='super_admin') && viewMode==='admin';
-      row.style.background = placeSelected.has(sid) ? 'rgba(59,123,255,0.07)' : '';
+    if (row) row.style.background = placeSelected.has(sid) ? 'rgba(59,123,255,0.07)' : '';
+
+    // Dla Social Media: rozwiń/zwiń listę kont pod wierszem
+    const item = allPlacesRaw.find(r => String(r[0]) === sid);
+    if (item && item[3] === 'Social Media') {
+      if (placeSelected.has(sid)) {
+        _showSmAccountsRow(sid, row);
+      } else {
+        _hideSmAccountsRow(sid);
+      }
     }
     updatePlaceSelBar();
+  }
+
+  function _showSmAccountsRow(placeId, parentRow) {
+    _hideSmAccountsRow(placeId);
+    const accounts = smAccountsCache[placeId] || [];
+    const sel = smSelected[placeId] || new Set();
+
+    const tr = document.createElement('tr');
+    tr.id = 'sm-acc-row-' + placeId;
+    tr.style.cssText = 'background:rgba(59,123,255,0.04)';
+
+    const tdEmpty = document.createElement('td');
+    const tdContent = document.createElement('td');
+    tdContent.colSpan = 6;
+    tdContent.style.cssText = 'padding:6px 12px 10px 28px';
+
+    const header = document.createElement('div');
+    header.style.cssText = 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3);margin-bottom:6px';
+    header.textContent = 'Wybierz konta do eksportu';
+    tdContent.appendChild(header);
+
+    if (accounts.length === 0) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:12px;color:var(--text-3);font-style:italic';
+      empty.textContent = 'Brak kont — dodaj je przez „Konta”';
+      tdContent.appendChild(empty);
+    } else {
+      accounts.forEach(a => {
+        const item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer';
+        item.onclick = () => toggleSmAccount(placeId, a.id);
+
+        const cb = document.createElement('div');
+        cb.className = 'sm-picker-cb' + (sel.has(a.id) ? ' checked' : '');
+        cb.id = 'smcb-' + a.id;
+
+        const label = document.createElement('span');
+        label.style.cssText = 'font-size:13px;color:var(--text-1);font-weight:500';
+        label.textContent = a.login || '';
+
+        item.appendChild(cb);
+        item.appendChild(label);
+        tdContent.appendChild(item);
+      });
+    }
+
+    tr.appendChild(tdEmpty);
+    tr.appendChild(tdContent);
+
+    if (parentRow && parentRow.parentNode) {
+      parentRow.parentNode.insertBefore(tr, parentRow.nextSibling);
+    }
+  }
+
+  function _hideSmAccountsRow(placeId) {
+    const existing = document.getElementById('sm-acc-row-' + placeId);
+    if (existing) existing.remove();
   }
 
   function toggleSelectAllPlaces() {
@@ -3086,12 +3149,18 @@
     } else {
       allIds.forEach(id => placeSelected.add(id));
     }
-    // Zaktualizuj wizualnie checkboxy i tła wierszy
+    // Zaktualizuj wizualnie checkboxy, tła i SM account rows
     allIds.forEach(id => {
       const cb  = document.getElementById('pcb-' + id);
       const row = document.getElementById('row-' + id);
       if (cb)  cb.classList.toggle('checked', placeSelected.has(id));
       if (row) row.style.background = placeSelected.has(id) ? 'rgba(59,123,255,0.07)' : '';
+      // SM: pokaż/ukryj listę kont
+      const item = allPlacesRaw.find(r => String(r[0]) === id);
+      if (item && item[3] === 'Social Media') {
+        if (placeSelected.has(id)) _showSmAccountsRow(id, row);
+        else _hideSmAccountsRow(id);
+      }
     });
     updatePlaceSelBar();
   }
@@ -4823,7 +4892,7 @@
     const smIds = allPlacesRaw.filter(r => r[1] && r[3] === 'Social Media').map(r => String(r[0]));
     for (const id of smIds) {
       if (!smAccountsCache[id]) {
-        const data = await callAPI('getSocialAccounts', {}, 'GET', { placeId: id });
+        const data = await callAPI('getSocialAccounts', { placeId: id }, 'GET');
         if (data?.accounts) smAccountsCache[id] = data.accounts;
       }
     }
