@@ -3181,7 +3181,8 @@
     const delBtn = document.getElementById('del-delete-btn');
     if (delBtn) {
       const role = sessionStorage.getItem('sld_role');
-      const canDel = (role==='admin'||role==='super_admin') && viewMode==='admin';
+      const canDel = (role==='admin'||role==='super_admin') && viewMode==='admin'
+        || role === 'weryfikator';
       delBtn.style.display = canDel ? '' : 'none';
     }
 
@@ -4829,13 +4830,14 @@
       sections: [
         { t: 'Czym jest to narzędzie i Twoja rola?', items: [
           { i:'🎯', t:'Cel narzędzia', d:'Sempai LB Database to wewnętrzna baza miejsc w internecie, gdzie specjaliści SEO mogą umieścić linki dla klientów — portale ogłoszeniowe, katalogi firm, profile Social Media i inne. Twoja rola jako weryfikatora to sprawdzanie i zatwierdzanie nowych miejsc zanim trafią do głównej bazy.' },
-          { i:'🔄', t:'Twoje zadanie w procesie', d:'Gdy specjalista SEO znajdzie nowe miejsce i nie jest pewny szczegółów, zgłasza je Do weryfikacji. Ty wchodzisz na stronę, sprawdzasz czy faktycznie można tam umieścić link, uzupełniasz brakujące dane (czy link jest dofollow, jaka kategoria tematyczna) i wysyłasz do akceptacji admina. Dopiero admin zatwierdza lub odrzuca miejsce.' },
+          { i:'🔄', t:'Twoje zadanie w procesie', d:'Masz dostęp do niemal wszystkich funkcji narzędzia — przeglądasz bazę, edytujesz miejscówki, usuwasz niepotrzebne wpisy, weryfikujesz i akceptujesz nowe zgłoszenia oraz rozpatrujesz zgłoszenia problemów. Jedyną sekcją do której nie masz dostępu jest Panel administracyjny (zarządzanie użytkownikami, ustawieniami i migracją danych) — to zostało zarezerwowane dla administratora.' },
         ]},
         { t: 'Baza miejsc LB', items: [
           { i:'🔍', t:'Przeglądanie i filtrowanie', d:'Główny widok pokazuje wszystkie zatwierdzone miejsca. Filtruj klikając kolorowe zakładki typów (Profile, Social Media, Ogłoszenia, Katalogi) lub wybierając status HTTP. Wyszukiwarka pozwala znaleźć miejsce po URL lub nazwie.' },
           { i:'📝', t:'Notatki i przykładowy wpis', d:'Pod URL miejscówki możesz zobaczyć notatkę (szara ikona kartki) z informacjami o specyfice miejsca oraz przykładowy wpis (niebieski spinacz) — link potwierdzający że ktoś faktycznie umieścił tam link. Obie informacje są przydatne przy planowaniu działań.' },
-          { i:'✏️', t:'Edycja miejscówki', d:'Jako weryfikator możesz edytować istniejące miejsca — kliknij ikonę ołówka aby zmienić URL, nazwę, Dofollow, notatkę lub przykładowy wpis. Przycisk usuwania jest dostępny tylko dla administratorów.' },
-          { i:'⚠️', t:'Zgłoś lub rozpatrz problem', d:'Przycisk Zgłoś przy każdej miejscówce pozwala opisać co nie działa. W zakładce Weryfikacja → Zgłoszenia możesz również rozpatrywać zgłoszenia innych użytkowników — usunąć miejsce lub zignorować zgłoszenie.' },
+          { i:'✏️', t:'Edycja miejscówki', d:'Jako weryfikator możesz edytować istniejące miejsca — kliknij ikonę ołówka aby zmienić URL, nazwę, Dofollow, notatkę lub przykładowy wpis. Zmiany zapisywane są natychmiast w bazie danych.' },
+          { i:'🗑️', t:'Usuwanie miejscówek', d:'Zaznacz checkboxy przy wybranych miejscówkach (lub użyj checkboxa w nagłówku tabeli aby zaznaczyć wszystkie). Na dole ekranu pojawi się pasek akcji z przyciskiem Usuń zaznaczone. Używaj tej opcji gdy miejsce przestało istnieć, jest zduplikowane lub z innego powodu nie powinno być w bazie. Usunięcia są nieodwracalne.' },
+          { i:'⚠️', t:'Zgłoś lub rozpatrz problem', d:'Przycisk Zgłoś przy każdej miejscówce pozwala opisać co nie działa. W zakładce Weryfikacja → Zgłoszenia możesz rozpatrywać zgłoszenia — usunąć miejsce z bazy lub zignorować zgłoszenie jeśli jest nieuzasadnione.' },
         ]},
         { t: 'Eksport miejsc do XLSX', items: [
           { i:'☑️', t:'Jak zaznaczyć miejsca', d:'Kliknij checkbox po lewej stronie wiersza aby zaznaczyć miejsce. Możesz zaznaczyć wiele naraz lub wszystkie checkboxem w nagłówku. Po zaznaczeniu pojawia się pasek akcji na dole z przyciskiem Eksportuj.' },
