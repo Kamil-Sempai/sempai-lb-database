@@ -4458,11 +4458,16 @@
 
     if (!url) { alert('URL jest wymagany.'); return; }
 
+    console.log('[LB DEBUG] editPlace wysyłam:', { id, name, url, dofollow: dof, notes, linkDo });
     const data = await callAPI('editPlace', { id, name, url, dofollow: dof, notes, linkDo }, 'POST');
+    console.log('[LB DEBUG] editPlace odpowiedź:', JSON.stringify(data));
     if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
     document.getElementById('qedit-modal').remove();
     showToast('✅ Zmiany zapisane', 'success');
     await refreshDataInBackground();
+    // Sprawdź czy linkDo jest w odświeżonych danych
+    const savedItem = allPlacesRaw.find(r => String(r[0]) === String(id));
+    console.log('[LB DEBUG] po odświeżeniu item[14]:', savedItem ? savedItem[14] : 'nie znaleziono');
     renderFilteredPlaces();
   }
 
