@@ -1563,11 +1563,20 @@
     if(navEl&&navEl.classList)navEl.classList.add('active');
     else{const nb=document.getElementById('nav-'+name);if(nb)nb.classList.add('active')}
     closeUserMenu();
+    // Reset selekcji przy każdej zmianie zakładki
+    placeSelected.clear();
+    document.querySelectorAll('.row-cb.checked').forEach(cb => cb.classList.remove('checked'));
+    document.querySelectorAll('tr[style*="rgba(59,123,255"]').forEach(tr => tr.style.background = '');
+    const _thBox = document.getElementById('th-cb-box');
+    if(_thBox) _thBox.classList.remove('checked');
+    const _bar = document.getElementById('del-action-bar');
+    if(_bar) _bar.classList.remove('show');
     if(name==='dodaj') initForm();
     if(name==='weryfikacja') loadVerification();
     if(name==='monitoring') renderMonitoring();
     if(name==='admin') { loadAdminUsers(); loadAdminTypesCategories(); loadAdminSettings(); }
     if(name==='users') { showPage('admin', document.getElementById('nav-admin')); showAdminTab('users'); }
+    if(name==='baza') renderFilteredPlaces();
   }
 
   /* ── VIEW MODE TOGGLE (admin only) ───────────── */
