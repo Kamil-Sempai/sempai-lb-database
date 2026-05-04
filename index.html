@@ -410,7 +410,7 @@
     /* ── TABLE ROW SELECTION (delete) ──────────── */
     .td-cb{width:32px;padding:0 8px 0 4px!important;vertical-align:middle}
     .row-cb{width:15px;height:15px;border:1.5px solid var(--border);border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all var(--t);background:transparent;flex-shrink:0;vertical-align:middle}
-    .row-cb.checked{background:var(--danger);border-color:var(--danger)}
+    .row-cb.checked{background:var(--accent);border-color:var(--accent)}
     .row-cb.checked::after{content:'✓';font-size:9px;color:#fff;font-weight:700}
     tr:hover .row-cb{border-color:var(--border-2)}
     .th-cb{width:32px;padding:0 8px 0 4px!important}
@@ -3012,7 +3012,7 @@
     if (row) {
       const role = sessionStorage.getItem('sld_role');
       const isAdm = (role==='admin'||role==='super_admin') && viewMode==='admin';
-      row.style.background = placeSelected.has(sid) ? (isAdm ? 'rgba(239,68,68,0.04)' : 'rgba(59,123,255,0.06)') : '';
+      row.style.background = placeSelected.has(sid) ? 'rgba(59,123,255,0.07)' : '';
     }
     updatePlaceSelBar();
   }
@@ -3020,9 +3020,19 @@
   function toggleSelectAllPlaces() {
     const allIds = allPlacesRaw.filter(r=>r[1]).map(r=>String(r[0]));
     const allChecked = allIds.every(id => placeSelected.has(id));
-    if (allChecked) allIds.forEach(id => placeSelected.delete(id));
-    else allIds.forEach(id => placeSelected.add(id));
-    renderFilteredPlaces();
+    if (allChecked) {
+      allIds.forEach(id => placeSelected.delete(id));
+    } else {
+      allIds.forEach(id => placeSelected.add(id));
+    }
+    // Zaktualizuj wizualnie checkboxy i tła wierszy
+    allIds.forEach(id => {
+      const cb  = document.getElementById('pcb-' + id);
+      const row = document.getElementById('row-' + id);
+      if (cb)  cb.classList.toggle('checked', placeSelected.has(id));
+      if (row) row.style.background = placeSelected.has(id) ? 'rgba(59,123,255,0.07)' : '';
+    });
+    updatePlaceSelBar();
   }
 
   function clearPlaceSelection() {
