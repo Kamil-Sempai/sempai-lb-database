@@ -3771,10 +3771,10 @@
     const linkDo   = document.getElementById('ff-link')?.value.trim() || '';
     const isChecked = formMode === 'checked';
 
-    if (!url) { alert('Podaj URL miejscówki.'); return; }
-    if (!formType) { alert('Wybierz typ miejscówki.'); return; }
-    if (formType === 'Profile' && !kategoria) { alert('Wybierz kategorię tematyczną.'); return; }
-    if (isChecked && !linkDo) { alert('Podaj link do dodanego linku — to pole jest wymagane przy miejscówce sprawdzonej.'); return; }
+    if (!url) { _submitting=false; if(_btn){_btn.disabled=false;_btn.style.opacity='';} alert('Podaj URL miejscówki.'); return; }
+    if (!formType) { _submitting=false; if(_btn){_btn.disabled=false;_btn.style.opacity='';} alert('Wybierz typ miejscówki.'); return; }
+    if (formType === 'Profile' && !kategoria) { _submitting=false; if(_btn){_btn.disabled=false;_btn.style.opacity='';} alert('Wybierz kategorię tematyczną.'); return; }
+    if (isChecked && !linkDo) { _submitting=false; if(_btn){_btn.disabled=false;_btn.style.opacity='';} alert('Podaj link do dodanego linku — to pole jest wymagane przy miejscówce sprawdzonej.'); return; }
 
     // Check for duplicate URL — in baza and in pending verifications
     const normalizedUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
@@ -3787,7 +3787,7 @@
     if (duplicate) {
       const dupName = duplicate[2] || duplicate[1];
       const proceed = confirm(`⚠️ Ta domena już znajduje się w bazie jako "${dupName}".\n\nCzy chcesz mimo to dodać ją ponownie?`);
-      if (!proceed) return;
+      if (!proceed) { _submitting=false; if(_btn){_btn.disabled=false;_btn.style.opacity='';} return; }
     }
 
     // Check weryfikacja — pending (do_weryfikacji or czeka_na_akceptacje)
@@ -3800,7 +3800,7 @@
       });
       if (pending) {
         alert(`ℹ️ Domena zgłoszona, oczekuje na akceptację.\n\nTa domena została już wcześniej zgłoszona przez ${pending[9]||'innego użytkownika'} i oczekuje na zatwierdzenie przez administratora.`);
-        return;
+        _submitting=false; if(_btn){_btn.disabled=false;_btn.style.opacity='';} return;
       }
     }
 
@@ -3814,7 +3814,8 @@
       checked: isChecked
     }, 'POST');
 
-    btn.disabled = false; btn.textContent = 'Wyślij do weryfikacji';
+    _submitting = false;
+    btn.disabled = false; btn.style.opacity = ''; btn.textContent = 'Wyślij do weryfikacji';
 
     if (!data || data.error) {
       alert('Błąd: ' + (data?.error || 'Nieznany błąd. Spróbuj ponownie.'));
