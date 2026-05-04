@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
       --navy:#151B3A; --accent:#3B7BFF; --accent-h:#2B68EE; --accent-glow:rgba(59,123,255,0.18);
@@ -760,6 +761,20 @@
     .guide-foot{padding:14px 24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
     .guide-foot-hint{font-size:11.5px;color:var(--text-3)}
 
+
+    /* SM Account Picker */
+    .sm-pick-btn{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:600;background:rgba(59,123,255,0.08);border:1px solid rgba(59,123,255,0.2);color:var(--accent);cursor:pointer;margin-left:4px;transition:all var(--t)}
+    .sm-pick-btn:hover{background:rgba(59,123,255,0.15)}
+    .sm-pick-btn.sm-pick-active{background:rgba(59,123,255,0.15);border-color:rgba(59,123,255,0.4)}
+    .sm-picker-dropdown{position:absolute;z-index:500;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);padding:8px;min-width:220px;max-width:280px}
+    .sm-picker-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--r);cursor:pointer;transition:background var(--t)}
+    .sm-picker-item:hover{background:var(--bg-input)}
+    .sm-picker-cb{width:14px;height:14px;border:1.5px solid var(--border-2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all var(--t)}
+    .sm-picker-cb.checked{background:var(--accent);border-color:var(--accent)}
+    .sm-picker-cb.checked::after{content:'✓';font-size:8px;color:#fff;font-weight:700}
+    .sm-picker-login{font-size:12.5px;font-weight:500;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sm-picker-empty{font-size:12px;color:var(--text-3);padding:4px 8px}
+    .sm-picker-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3);padding:0 4px 6px;border-bottom:1px solid var(--border);margin-bottom:6px}
     /* LOADER */
     #loader{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;transition:opacity 0.35s ease}
     #loader.hidden{opacity:0;pointer-events:none}
@@ -1456,18 +1471,28 @@
       Eksportuj
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
     </button>
-    <div id="export-menu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-lg);z-index:400;min-width:210px">
-      <button onclick="exportSelectedCSV('local')" style="display:flex;align-items:center;gap:9px;padding:10px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+    <div id="export-menu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-lg);z-index:400;min-width:240px">
+      <div style="padding:8px 14px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3)">Pobierz na dysk lokalny</div>
+      <button onclick="exportSelectedXLSX('local','single')" style="display:flex;align-items:center;gap:9px;padding:8px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        Pobierz na dysk lokalny
+        Jeden arkusz
       </button>
-      <div style="height:1px;background:var(--border)"></div>
-      <button onclick="exportSelectedCSV('drive')" style="display:flex;align-items:center;gap:9px;padding:10px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+      <button onclick="exportSelectedXLSX('local','split')" style="display:flex;align-items:center;gap:9px;padding:8px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
+        Podzielony wg typu
+      </button>
+      <div style="height:1px;background:var(--border);margin:4px 0"></div>
+      <div style="padding:6px 14px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3)">Zapisz na Google Drive</div>
+      <button onclick="exportSelectedXLSX('drive','single')" style="display:flex;align-items:center;gap:9px;padding:8px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
-        Zapisz na Google Drive
+        Jeden arkusz
+      </button>
+      <button onclick="exportSelectedXLSX('drive','split')" style="display:flex;align-items:center;gap:9px;padding:8px 14px 10px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
+        Podzielony wg typu
       </button>
     </div>
-  </div>
+  </div> </div>
   <button class="btn btn-sm" id="del-delete-btn" onclick="deleteSelected()" style="background:var(--danger);color:#fff;border:none;display:none">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
     Usuń zaznaczone
@@ -1690,8 +1715,7 @@
     const fnInput = document.getElementById('picker-filename-input');
     if (fnWrap) fnWrap.style.display = 'block';
     if (fnInput) {
-      const date = new Date().toISOString().slice(0,10);
-      fnInput.value = 'sempai-lb-export-' + date;
+      fnInput.value = defaultExportName();
     }
 
     document.getElementById('picker-modal').classList.add('show');
@@ -1731,13 +1755,13 @@
       if (fnWrap) fnWrap.style.display = 'none';
       // Pobierz nazwę pliku z inputa (lub użyj domyślnej)
       const fnInput = document.getElementById('picker-filename-input');
-      const customName = fnInput?.value.trim() || '';
-      const date = new Date().toISOString().slice(0,10);
-      const filename = (customName || ('sempai-lb-export-' + date)) + '.csv';
+      const customName = fnInput?.value.trim() || defaultExportName();
       // Zapisz do wybranego folderu (lub root jeśli nic nie wybrano)
       const folderId = pickerSelected?.id || 'root';
       const folderName = pickerSelected?.name || null;
-      _doExportToDrive(folderId, folderName, filename);
+      const { rows, mode } = _exportPending || {};
+      _exportPending = null;
+      if (rows) _doExportXLSX(rows, mode, folderId, folderName, customName);
       return;
     }
     const fd=pickerSelected;
@@ -2051,6 +2075,9 @@
       renderFilteredPlaces(); // DOM is ready, data is ready — this WILL work
 
       if(!localStorage.getItem(SETUP_KEY)) setTimeout(()=>openPicker('setup'),400);
+
+      // Załaduj konta SM do cache dla eksportu
+      preloadSmAccounts().catch(() => {});
 
       // Poradnik - pokaz tylko przy pierwszym otwarciu narzedzia (localStorage)
       if (!hasSeenGuide()) {
@@ -2589,7 +2616,10 @@
           ? `<span style="color:var(--danger);font-size:15px;font-weight:700">✗</span>`
           : `<span style="color:var(--text-3)">—</span>`;
       const isSM    = item.type === 'Social Media';
-      const accBtn  = isSM ? `<span class="accounts-btn" onclick="openAccountsModal('${escAttr(item.id)}','${escAttr(item.url)}','${escAttr(item.name||'')}')">👤 Konta</span>` : '';
+      const accBtn  = isSM ? `<span class="accounts-btn" onclick="openAccountsModal('${escAttr(item.id)}','${escAttr(item.url)}','${escAttr(item.name||'')}')" >👤 Konta</span>` : '';
+      const smAccounts = isSM ? (smAccountsCache[String(item.id)] || []) : [];
+      const smSelCount = isSM ? (smSelected[String(item.id)] ? smSelected[String(item.id)].size : 0) : 0;
+      const smPickBtn = isSM ? `<span class="sm-pick-btn${smSelCount > 0 ? ' sm-pick-active' : ''}" onclick="toggleSmPicker('${escAttr(item.id)}',event)" title="Wybierz konta do eksportu">${smSelCount > 0 ? '✓ ' + smSelCount : '+ eksport'}</span>` : '';
       const favicon = getFavicon(item.url);
       const favImg  = favicon ? `<img src="${favicon}" width="16" height="16" style="border-radius:3px;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:7px" onerror="this.remove()">` : '';
       const rowId   = 'row-' + escAttr(item.id);
@@ -2612,7 +2642,7 @@
             </div>
           </div>
         </td>
-        <td><span class="${typePillClass(item.type)}">${typeIcon(item.type)} ${escHtml(item.type || '—')}</span> ${accBtn}</td>
+        <td><span class="${typePillClass(item.type)}">${typeIcon(item.type)} ${escHtml(item.type || '—')}</span> ${accBtn} ${smPickBtn}</td>
         <td>${badge}</td>
         <td class="td-num" style="text-align:center">${dofCell}</td>
         <td class="td-date">${item.lastCheck || '—'}</td>
@@ -3111,7 +3141,72 @@
     }
   }
 
-  async function exportSelectedCSV(dest) {
+  /* ── XLSX EXPORT ────────────────────────────────── */
+
+  function buildXlsxData(rows, mode) {
+    // mode: 'single' | 'split'
+    // Zwraca obiekt { sheetName: [[row], ...], ... }
+
+    const dof = r => String(r[7]||'').toUpperCase() === 'TAK' ? 'TAK' : (String(r[7]||'').toUpperCase() === 'NIE' ? 'NIE' : '');
+
+    // Rozdziel SM i pozostałe
+    const smRows = rows.filter(r => r[3] === 'Social Media');
+    const otherRows = rows.filter(r => r[3] !== 'Social Media');
+
+    const sheets = {};
+
+    if (mode === 'single') {
+      // Zakładka 1: Miejscówki (bez SM)
+      if (otherRows.length > 0) {
+        sheets['Miejscówki'] = [
+          ['URL', 'Typ', 'DoFollow', 'Notatki', 'Pozyskany link'],
+          ...otherRows.map(r => [r[1], r[3]||'', dof(r), r[13]||'', ''])
+        ];
+      }
+    } else {
+      // mode === 'split' — oddzielna zakładka dla każdego typu (bez SM)
+      const types = [...new Set(otherRows.map(r => r[3]).filter(Boolean))];
+      for (const type of types) {
+        const typeRows = otherRows.filter(r => r[3] === type);
+        sheets[type] = [
+          ['URL', 'DoFollow', 'Notatki', 'Pozyskany link'],
+          ...typeRows.map(r => [r[1], dof(r), r[13]||'', ''])
+        ];
+      }
+    }
+
+    // Zakładka Social Media (zawsze oddzielna)
+    if (smRows.length > 0) {
+      const smSheetRows = [['URL', 'Login', 'Hasło', 'DoFollow', 'Pozyskany link']];
+      for (const r of smRows) {
+        const placeId = String(r[0]);
+        const accounts = smAccountsCache[placeId] || [];
+        const selectedIds = smSelected[placeId] || new Set();
+
+        // Filtruj tylko zaznaczone konta (lub wszystkie jeśli żadne nie zaznaczono)
+        const accountsToExport = selectedIds.size > 0
+          ? accounts.filter(a => selectedIds.has(a.id))
+          : accounts;
+
+        if (accountsToExport.length === 0) {
+          // Brak kont — dodaj tylko wiersz z URL
+          smSheetRows.push([r[1], '', '', dof(r), '']);
+        } else {
+          // Pierwszy wiersz: URL + pierwsze konto
+          smSheetRows.push([r[1], accountsToExport[0].login||'', accountsToExport[0].haslo||'', dof(r), '']);
+          // Kolejne konta: puste URL
+          for (let i = 1; i < accountsToExport.length; i++) {
+            smSheetRows.push(['', accountsToExport[i].login||'', accountsToExport[i].haslo||'', '', '']);
+          }
+        }
+      }
+      sheets['Social Media'] = smSheetRows;
+    }
+
+    return sheets;
+  }
+
+  async function exportSelectedXLSX(dest, mode) {
     const ids = [...placeSelected];
     if (!ids.length) return;
 
@@ -3122,39 +3217,91 @@
     const idSet = new Set(ids.map(String));
     const rows = allPlacesRaw.filter(r => r[1] && idSet.has(String(r[0])));
 
-    const headers = ['URL', 'Typ', 'DoFollow', 'Notatki', 'Pozyskany link'];
-    const csvEscape = val => {
-      const s = String(val ?? '');
-      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    const lines = [
-      headers.join(','),
-      ...rows.map(r => [
-        r[1],
-        r[3] || '',
-        String(r[7]||'').toUpperCase() === 'TAK' ? 'TAK' : (String(r[7]||'').toUpperCase() === 'NIE' ? 'NIE' : ''),
-        r[13] || '',
-        ''
-      ].map(csvEscape).join(','))
-    ];
-
-    const bom = '\uFEFF';
-    const csvContent = bom + lines.join('\r\n');
-    const date = new Date().toISOString().slice(0,10);
-    const filename = `sempai-lb-export-${date}.csv`;
-
     if (dest === 'drive') {
-      await exportToDrive(csvContent, filename, rows.length);
+      // Otwórz picker z informacją o trybie
+      _exportPending = { rows, mode };
+      openExportPicker();
     } else {
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename; a.click();
-      URL.revokeObjectURL(url);
-      showToast(`✅ Wyeksportowano ${rows.length} miejscówek`, 'success');
+      _doExportXLSX(rows, mode, null, null, null);
     }
   }
 
+  function _doExportXLSX(rows, mode, folderId, folderName, customFilename) {
+    if (!window.XLSX) { showToast('⚠️ Biblioteka XLSX nie jest załadowana', 'error'); return; }
+
+    const sheets = buildXlsxData(rows, mode);
+    if (Object.keys(sheets).length === 0) { showToast('⚠️ Brak danych do eksportu', 'error'); return; }
+
+    const wb = XLSX.utils.book_new();
+    for (const [sheetName, data] of Object.entries(sheets)) {
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      // Szerokości kolumn
+      ws['!cols'] = [{wch:45},{wch:20},{wch:18},{wch:35},{wch:45}];
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    }
+
+    const date = new Date().toISOString().slice(0,10);
+    const filename = (customFilename || defaultExportName()) + '.xlsx';
+    const totalRows = Object.values(sheets).reduce((s, r) => s + r.length - 1, 0);
+
+    if (folderId) {
+      // Eksport na Drive
+      const xlsxBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      _uploadXlsxToDrive(xlsxBuffer, filename, folderId, folderName, totalRows);
+    } else {
+      XLSX.writeFile(wb, filename);
+      showToast('✅ Wyeksportowano ' + totalRows + ' wierszy do ' + filename, 'success');
+    }
+  }
+
+  async function _uploadXlsxToDrive(buffer, filename, folderId, folderName, count) {
+    if (!currentUser?.access_token) { showToast('⚠️ Brak tokena — zaloguj się ponownie', 'error'); return; }
+
+    const folderLabel = folderName ? ' (' + folderName + ')' : ' (Mój dysk)';
+    const toastObj = showToast('⏳ Zapisuję na Google Drive…', 'info', 30000);
+
+    try {
+      const boundary = 'lb_xlsx_' + Date.now();
+      const metadata = JSON.stringify({
+        name: filename,
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ...(folderId && folderId !== 'root' ? { parents: [folderId] } : {})
+      });
+
+      // Multipart: metadata + binary
+      const metaPart = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + metadata + '\r\n';
+      const dataPart = '--' + boundary + '\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n';
+      const endPart = '\r\n--' + boundary + '--';
+
+      const metaBytes = new TextEncoder().encode(metaPart);
+      const dataPartBytes = new TextEncoder().encode(dataPart);
+      const endBytes = new TextEncoder().encode(endPart);
+      const fileBytes = new Uint8Array(buffer);
+
+      const body = new Uint8Array(metaBytes.length + dataPartBytes.length + fileBytes.length + endBytes.length);
+      let offset = 0;
+      [metaBytes, dataPartBytes, fileBytes, endBytes].forEach(chunk => { body.set(chunk, offset); offset += chunk.length; });
+
+      const resp = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+        { method: 'POST', headers: { 'Authorization': 'Bearer ' + currentUser.access_token, 'Content-Type': 'multipart/related; boundary=' + boundary }, body }
+      );
+      const result = await resp.json();
+      if (result.error) throw new Error(result.error.message || 'Błąd Drive API');
+
+      toastObj.update('✅ Zapisano na Drive' + folderLabel, 'success');
+      if (result.webViewLink) {
+        setTimeout(() => {
+          const el = document.getElementById('lb-toast');
+          if (el) { el.style.cursor = 'pointer'; el.onclick = () => window.open(result.webViewLink, '_blank'); }
+        }, 200);
+      }
+    } catch(err) {
+      toastObj.update('⚠️ Błąd zapisu: ' + err.message, 'error');
+    }
+  }
+
+  
   // Dane oczekujące na wybór folderu przez picker eksportu
   let _exportPending = null;
 
@@ -3188,8 +3335,7 @@
     const fnInput = document.getElementById('picker-filename-input');
     if (fnWrap) fnWrap.style.display = 'block';
     if (fnInput) {
-      const date = new Date().toISOString().slice(0,10);
-      fnInput.value = 'sempai-lb-export-' + date;
+      fnInput.value = defaultExportName();
     }
 
     document.getElementById('picker-modal').classList.add('show');
@@ -4556,7 +4702,14 @@
 
 
   /* ── GUIDE ─────────────────────────── */
-  const GUIDE_KEY = 'sld_first_visit'; // prosta flaga - czy użytkownik już widział poradnik
+  const GUIDE_KEY = 'sld_first_visit';
+  const POLISH_MONTHS = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec',
+    'Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+  function defaultExportName() {
+    const d = new Date();
+    return 'LB ' + POLISH_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  }
+ // prosta flaga - czy użytkownik już widział poradnik
   function markGuideSeen(){localStorage.setItem(GUIDE_KEY,'1')}
   function hasSeenGuide(){return !!localStorage.getItem(GUIDE_KEY)}
 
@@ -4657,6 +4810,106 @@
     const el = document.getElementById('guide-modal');
     if (el) el.classList.remove('show');
     markGuideSeen(); // zapamiętaj że użytkownik już widział poradnik
+  }
+
+
+  /* ── SM EXPORT PICKER ──────────────────────────── */
+  let smAccountsCache = {}; // placeId -> [{id,login,haslo,notatki}]
+  let smSelected = {};      // placeId -> Set of account ids
+  let _smPickerOpen = null; // id miejscówki z otwartym pickerem
+
+  async function preloadSmAccounts() {
+    // Pobierz konta dla wszystkich SM miejscówek przy ładowaniu
+    const smIds = allPlacesRaw.filter(r => r[1] && r[3] === 'Social Media').map(r => String(r[0]));
+    for (const id of smIds) {
+      if (!smAccountsCache[id]) {
+        const data = await callAPI('getSocialAccounts', {}, 'GET', { placeId: id });
+        if (data?.accounts) smAccountsCache[id] = data.accounts;
+      }
+    }
+  }
+
+  function toggleSmPicker(placeId, event) {
+    event?.stopPropagation();
+    // Zamknij istniejący picker
+    const existing = document.getElementById('sm-picker-dropdown');
+    if (existing) {
+      existing.remove();
+      if (_smPickerOpen === placeId) { _smPickerOpen = null; return; }
+    }
+    _smPickerOpen = placeId;
+
+    const accounts = smAccountsCache[placeId] || [];
+    const sel = smSelected[placeId] || new Set();
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'sm-picker-dropdown';
+    dropdown.id = 'sm-picker-dropdown';
+    dropdown.innerHTML = `
+      <div class="sm-picker-head">Wybierz konta do eksportu</div>
+      ${accounts.length === 0
+        ? '<div class="sm-picker-empty">Brak kont — najpierw dodaj je przez "Konta"</div>'
+        : accounts.map(a => `
+          <div class="sm-picker-item" onclick="toggleSmAccount('${placeId}','${a.id}')">
+            <div class="sm-picker-cb ${sel.has(a.id) ? 'checked' : ''}" id="smcb-${a.id}"></div>
+            <div class="sm-picker-login" title="${escHtml(a.login)}">${escHtml(a.login)}</div>
+          </div>
+        `).join('')}
+      <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;gap:6px">
+        <button onclick="selectAllSmAccounts('${placeId}')" style="flex:1;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text-2);cursor:pointer;font-family:var(--font)">Wszystkie</button>
+        <button onclick="clearSmAccounts('${placeId}')" style="flex:1;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text-2);cursor:pointer;font-family:var(--font)">Wyczyść</button>
+      </div>
+    `;
+
+    // Pozycja — pod przyciskiem
+    const btn = event.target.closest('.sm-pick-btn');
+    const rect = btn.getBoundingClientRect();
+    dropdown.style.position = 'fixed';
+    dropdown.style.top = (rect.bottom + 6) + 'px';
+    dropdown.style.left = rect.left + 'px';
+    document.body.appendChild(dropdown);
+
+    // Zamknij na klik poza
+    setTimeout(() => {
+      document.addEventListener('click', function handler(e) {
+        if (!dropdown.contains(e.target)) {
+          dropdown.remove();
+          _smPickerOpen = null;
+          document.removeEventListener('click', handler);
+        }
+      });
+    }, 0);
+  }
+
+  function toggleSmAccount(placeId, accountId) {
+    if (!smSelected[placeId]) smSelected[placeId] = new Set();
+    const sel = smSelected[placeId];
+    if (sel.has(accountId)) sel.delete(accountId);
+    else sel.add(accountId);
+
+    // Zaktualizuj checkbox w dropdownzie
+    const cb = document.getElementById('smcb-' + accountId);
+    if (cb) cb.classList.toggle('checked', sel.has(accountId));
+
+    // Zaktualizuj przycisk w wierszu tabeli
+    const rowBtn = document.querySelector(`[onclick*="toggleSmPicker('${placeId}'"]`);
+    if (rowBtn) {
+      const count = sel.size;
+      rowBtn.textContent = count > 0 ? '✓ ' + count : '+ eksport';
+      rowBtn.classList.toggle('sm-pick-active', count > 0);
+    }
+  }
+
+  function selectAllSmAccounts(placeId) {
+    const accounts = smAccountsCache[placeId] || [];
+    if (!smSelected[placeId]) smSelected[placeId] = new Set();
+    accounts.forEach(a => smSelected[placeId].add(a.id));
+    _refreshSmPicker(placeId);
+  }
+
+  function clearSmAccounts(placeId) {
+    smSelected[placeId] = new Set();
+    _refreshSmPicker(placeId);
   }
 
   /* ── LOADER ───────────────────────────────────── */
