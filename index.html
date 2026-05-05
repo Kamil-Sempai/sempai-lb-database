@@ -1473,23 +1473,15 @@
     </button>
     <div id="export-menu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-lg);z-index:400;min-width:240px">
       <div style="padding:8px 14px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3)">Pobierz na dysk lokalny</div>
-      <button onclick="exportSelectedXLSX('local','single')" style="display:flex;align-items:center;gap:9px;padding:8px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        Jeden arkusz
-      </button>
       <button onclick="exportSelectedXLSX('local','split')" style="display:flex;align-items:center;gap:9px;padding:8px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
-        Podzielony wg typu
+        Eksportuj wg typu
       </button>
       <div style="height:1px;background:var(--border);margin:4px 0"></div>
       <div style="padding:6px 14px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3)">Zapisz na Google Drive</div>
-      <button onclick="exportSelectedXLSX('drive','single')" style="display:flex;align-items:center;gap:9px;padding:8px 14px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
-        Jeden arkusz
-      </button>
       <button onclick="exportSelectedXLSX('drive','split')" style="display:flex;align-items:center;gap:9px;padding:8px 14px 10px;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text-2);background:transparent;border:none;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
-        Podzielony wg typu
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
+        Eksportuj wg typu
       </button>
     </div>
   </div> </div>
@@ -1711,14 +1703,9 @@
     pickerStack=[{id:'root',name:'Mój dysk'}];
     pickerSelected=null;
     updatePickerUI();
-    // Pokaż pole nazwy pliku i ustaw domyślną wartość
+    // Upewnij się że pole nazwy pliku jest ukryte (tylko dla eksportu)
     const fnWrap = document.getElementById('picker-filename-wrap');
-    const fnInput = document.getElementById('picker-filename-input');
-    if (fnWrap) fnWrap.style.display = 'block';
-    if (fnInput) {
-      fnInput.value = defaultExportName();
-    }
-
+    if (fnWrap) fnWrap.style.display = 'none';
     document.getElementById('picker-modal').classList.add('show');
     loadPickerFolder('root');
   }
@@ -1765,8 +1752,9 @@
       if (rows) _doExportXLSX(rows, mode, folderId, folderName, customName);
       return;
     }
-    const fd=pickerSelected;
-    if(fd)setFD(fd); else setFD(null);
+    // Użyj zaznaczonego folderu lub bieżącego folderu ze stosu
+    const fd = pickerSelected || (pickerStack.length > 0 ? pickerStack[pickerStack.length-1] : null);
+    if(fd && fd.id !== 'root') setFD(fd); else setFD(null);
     localStorage.setItem(SETUP_KEY,'1');
     refreshFolderDisplay();
     document.getElementById('picker-modal').classList.remove('show');
@@ -1800,8 +1788,8 @@
       btn.disabled=false;
       sv.textContent=pickerSelected.name;
     } else {
-      btn.disabled=true;
-      sv.textContent='— nie wybrano —';
+      // Nie blokuj przycisku — bieżący folder jest domyślnym wyborem
+      sv.textContent='— bieżący folder —';
     }
   }
 
@@ -1814,10 +1802,15 @@
 
   async function loadPickerFolder(folderId){
     hideNewFolderRow();
-    // W trybie eksportu confirm jest zawsze aktywny (można wybrać bieżący folder)
-    if (pickerCallback === 'export') {
-      const confirmBtn = document.getElementById('picker-confirm-btn');
-      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Zapisz tutaj ✓'; }
+    // Przycisk zawsze aktywny po wejściu w folder — dla obu pickerów
+    const confirmBtn = document.getElementById('picker-confirm-btn');
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      if (pickerCallback === 'export') {
+        confirmBtn.textContent = 'Zapisz tutaj ✓';
+      } else {
+        confirmBtn.textContent = 'Wybierz ten folder ✓';
+      }
     }
     const list=document.getElementById('picker-list');
     list.innerHTML='<div class="picker-loading"><div class="picker-spinner"></div>Ładowanie folderów…</div>';
