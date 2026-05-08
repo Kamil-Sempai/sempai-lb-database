@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>Sempai · LB Database</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
@@ -1931,6 +1932,21 @@
     btn.innerHTML=GOOGLE_SVG+' Zaloguj się przez Google';
     if(resp.error){showLoginError('Błąd logowania: '+resp.error);return}
     try{
+      // Weryfikacja scope'ów przez tokeninfo endpoint (resp.scope nie jest zwracane przez Google)
+      const tokenInfo = await fetch('https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=' + resp.access_token);
+      const tokenData = await tokenInfo.json();
+      const granted = (tokenData.scope || '').split(' ');
+      const required = [
+        'https://www.googleapis.com/auth/spreadsheets.readonly',
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive.readonly'
+      ];
+      const missing = required.filter(s => !granted.includes(s));
+      if (missing.length > 0) {
+        showScopesError();
+        return;
+      }
+
       const r=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+resp.access_token}});
       const user=await r.json();
       if(!user.email||!user.email.endsWith('@'+ALLOWED_DOMAIN)){
@@ -1941,6 +1957,65 @@
       sessionStorage.setItem(SESSION_KEY,JSON.stringify(currentUser));
       enterApp(currentUser);
     }catch(e){showLoginError('Nie udało się zweryfikować konta. Spróbuj ponownie.')}
+  }
+
+  function showScopesError() {
+    const loginBox = document.getElementById('login-box');
+    if (!loginBox) return;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'text-align:center;padding:8px 0 24px';
+
+    const icon = document.createElement('div');
+    icon.style.cssText = 'font-size:48px;margin-bottom:16px';
+    icon.textContent = '⚠️';
+
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:18px;font-weight:700;color:var(--text-1);margin-bottom:10px';
+    title.textContent = 'Wymagane wszystkie uprawnienia';
+
+    const desc = document.createElement('div');
+    desc.style.cssText = 'font-size:14px;color:var(--text-2);line-height:1.6;margin-bottom:24px;max-width:360px;margin-left:auto;margin-right:auto';
+    desc.innerHTML = 'Aby narzędzie działało poprawnie, musisz zaakceptować <strong>wszystkie</strong> wymagane uprawnienia podczas logowania — w tym dostęp do Arkuszy Google i Google Drive.<br><br>Kliknij poniżej aby zalogować się ponownie i tym razem zaznaczyć wszystkie zgody.';
+
+    const btn = document.createElement('button');
+    btn.style.cssText = 'display:inline-flex;align-items:center;gap:10px;padding:12px 24px;background:var(--accent);color:#fff;border:none;border-radius:var(--r-lg);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)';
+    btn.textContent = '🔄 Zaloguj się ponownie';
+    btn.onclick = retryLogin;
+
+    const back = document.createElement('div');
+    back.style.marginTop = '14px';
+    const backLink = document.createElement('a');
+    backLink.style.cssText = 'font-size:12px;color:var(--text-3);cursor:pointer;text-decoration:underline';
+    backLink.textContent = 'Wróć do ekranu logowania';
+    backLink.onclick = showLoginScreen;
+    back.appendChild(backLink);
+
+    wrap.appendChild(icon);
+    wrap.appendChild(title);
+    wrap.appendChild(desc);
+    wrap.appendChild(btn);
+    wrap.appendChild(back);
+    loginBox.innerHTML = '';
+    loginBox.appendChild(wrap);
+  }
+
+  function retryLogin() {
+    // Wymuś ponowne pytanie o uprawnienia
+    google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: [
+        'https://www.googleapis.com/auth/spreadsheets.readonly',
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive.readonly',
+        'openid','email','profile'
+      ].join(' '),
+      callback: handleToken,
+      prompt: 'consent'
+    }).requestAccessToken({ prompt: 'consent' });
+  }
+
+  function showLoginScreen() {
+    location.reload();
   }
 
   function showLoginError(msg){const el=document.getElementById('login-error');el.textContent=msg;el.classList.add('show')}
