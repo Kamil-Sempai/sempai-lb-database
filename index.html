@@ -1937,17 +1937,13 @@
         // Weryfikacja scope'ów przez tokeninfo endpoint
         const tokenInfo = await fetch('https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=' + resp.access_token);
         const tokenData = await tokenInfo.json();
-        console.log('[LB DEBUG] tokeninfo scope:', tokenData.scope);
-        const granted = (tokenData.scope || '').split(' ');
-        const required = [
-          'https://www.googleapis.com/auth/spreadsheets.readonly',
-          'https://www.googleapis.com/auth/drive.file',
-          'https://www.googleapis.com/auth/drive.readonly'
-        ];
-        const missing = required.filter(s => !granted.includes(s));
-        console.log('[LB DEBUG] missing scopes:', missing);
-        if (missing.length > 0) {
-          showScopesError(missing);
+        const grantedStr = tokenData.scope || '';
+        const granted = grantedStr.split(' ');
+        // Sprawdzamy obecność kluczowych obszarów (Google może łączyć scope'y)
+        const hasSheets = granted.some(s => s.includes('spreadsheets'));
+        const hasDrive  = granted.some(s => s.includes('drive'));
+        if (!hasSheets || !hasDrive) {
+          showScopesError();
           return;
         }
 
@@ -1961,7 +1957,6 @@
         sessionStorage.setItem(SESSION_KEY,JSON.stringify(currentUser));
         enterApp(currentUser);
       }catch(e){
-        console.error('[LB DEBUG] handleToken error:', e);
         showLoginError('Nie udało się zweryfikować konta. Spróbuj ponownie.');
       }
     })();
@@ -5130,6 +5125,13 @@
   /* ── INIT ─────────────────────────────────────── */
   window.addEventListener('load',()=>{
     const saved=sessionStorage.getItem(SESSION_KEY);
+    if(saved){try{currentUser=JSON.parse(saved);enterApp(currentUser);return}catch(_){sessionStorage.removeItem(SESSION_KEY)}}
+    hideLoader();
+  });
+</script>
+</body>
+</html>
+=sessionStorage.getItem(SESSION_KEY);
     if(saved){try{currentUser=JSON.parse(saved);enterApp(currentUser);return}catch(_){sessionStorage.removeItem(SESSION_KEY)}}
     hideLoader();
   });
