@@ -2003,34 +2003,37 @@
   }
 
   function retryLogin() {
-    // Odwołaj istniejący token żeby wymusić pełne pytanie o wszystkie zgody
-    const existingToken = currentUser?.access_token || (()=>{
+    // Wyczyść sesję
+    sessionStorage.removeItem(SESSION_KEY);
+    currentUser = null;
+
+    // Odwołaj token jeśli istnieje
+    const existingToken = (()=>{
       try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || '{}').access_token; } catch(_){ return null; }
     })();
-
-    const doLogin = () => {
-      google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: [
-          'https://www.googleapis.com/auth/spreadsheets.readonly',
-          'https://www.googleapis.com/auth/drive.file',
-          'https://www.googleapis.com/auth/drive.readonly',
-          'openid','email','profile'
-        ].join(' '),
-        callback: handleToken
-      }).requestAccessToken({ prompt: 'consent' });
-    };
-
     if (existingToken) {
-      // Odwołaj token — potem zaloguj od nowa
-      google.accounts.oauth2.revoke(existingToken, () => {
-        sessionStorage.removeItem(SESSION_KEY);
-        currentUser = null;
-        doLogin();
-      });
-    } else {
-      doLogin();
+      try { google.accounts.oauth2.revoke(existingToken, ()=>{}); } catch(_) {}
     }
+
+    // Wyloguj z Google Identity Services całkowicie
+    try { google.accounts.id.disableAutoSelect(); } catch(_) {}
+
+    // Otwórz okno wyboru konta — user musi wybrać konto od nowa
+    // i zaakceptować scope'y na ekranie consent
+    const url = 'https://accounts.google.com/o/oauth2/auth?' + new URLSearchParams({
+      client_id: CLIENT_ID,
+      redirect_uri: window.location.origin + window.location.pathname,
+      response_type: 'token',
+      scope: [
+        'https://www.googleapis.com/auth/spreadsheets.readonly',
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive.readonly',
+        'openid','email','profile'
+      ].join(' '),
+      prompt: 'select_account consent',
+      include_granted_scopes: 'false'
+    });
+    window.location.href = url;
   }
 
   function showLoginScreen() {
@@ -5124,6 +5127,19 @@
 
   /* ── INIT ─────────────────────────────────────── */
   window.addEventListener('load',()=>{
+    // Obsłuż redirect z Google OAuth (implicit flow z retryLogin)
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      const params = new URLSearchParams(hash.slice(1));
+      const token = params.get('access_token');
+      // Wyczyść hash z URL bez reload
+      history.replaceState(null, '', window.location.pathname);
+      if (token) {
+        handleToken({ access_token: token });
+        return;
+      }
+    }
+
     const saved=sessionStorage.getItem(SESSION_KEY);
     if(saved){
       try{
