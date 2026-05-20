@@ -1960,7 +1960,7 @@
   }
 
   function showScopesError() {
-    const loginBox = document.getElementById('login-box');
+    const loginBox = document.querySelector('.login-card');
     if (!loginBox) return;
     const wrap = document.createElement('div');
     wrap.style.cssText = 'text-align:center;padding:8px 0 24px';
@@ -3021,18 +3021,29 @@
   }
 
   async function submitReport() {
-    const desc = document.getElementById('report-desc')?.value.trim();
-    if (!desc) { alert('Opisz problem zanim wyślesz zgłoszenie.'); return; }
+    if (submitReport._busy) return;
+    submitReport._busy = true;
+    const btn = document.getElementById('report-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Wysyłanie…'; }
 
-    const data = await callAPI('addReport', {
-      placeId: currentReportPlaceId,
-      placeUrl: currentReportPlaceUrl,
-      description: desc
-    }, 'POST');
-
-    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
-    closeModal('report-modal');
-    showToast('✅ Zgłoszenie wysłane — dziękujemy!', 'success');
+    try {
+      const desc = document.getElementById('report-desc')?.value.trim();
+      if (!desc) {
+        alert('Opisz problem zanim wyślesz zgłoszenie.');
+        return;
+      }
+      const data = await callAPI('addReport', {
+        placeId: currentReportPlaceId,
+        placeUrl: currentReportPlaceUrl,
+        description: desc
+      }, 'POST');
+      if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+      closeModal('report-modal');
+      showToast('✅ Zgłoszenie wysłane — dziękujemy!', 'success');
+    } finally {
+      submitReport._busy = false;
+      if (btn) { btn.disabled = false; btn.textContent = 'Wyślij zgłoszenie'; }
+    }
   }
 
   /* Reports in Weryfikacja tab */
@@ -4094,6 +4105,8 @@
   }
 
   async function submitForm() {
+    if (submitForm._busy) return;
+    submitForm._busy = true;
     const url      = document.getElementById('ff-url')?.value.trim();
     const name     = document.getElementById('ff-name')?.value.trim();
     const kategoria= document.getElementById('ff-kategoria')?.value || '';
@@ -4450,6 +4463,8 @@
   }
 
   async function submitSocialAccount() {
+    if (submitSocialAccount._busy) return;
+    submitSocialAccount._busy = true;
     const login     = document.getElementById('acc-login')?.value.trim();
     const haslo     = document.getElementById('acc-haslo')?.value;
     const notatki   = document.getElementById('acc-notatki')?.value.trim();
@@ -4774,6 +4789,8 @@
   }
 
   async function submitQuickEdit(id) {
+    if (submitQuickEdit._busy) return;
+    submitQuickEdit._busy = true;
     const name   = document.getElementById('qe-name')?.value.trim();
     const url    = document.getElementById('qe-url')?.value.trim();
     const dof    = document.getElementById('qe-dof')?.value;
