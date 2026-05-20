@@ -5125,14 +5125,42 @@
   /* ── INIT ─────────────────────────────────────── */
   window.addEventListener('load',()=>{
     const saved=sessionStorage.getItem(SESSION_KEY);
-    if(saved){try{currentUser=JSON.parse(saved);enterApp(currentUser);return}catch(_){sessionStorage.removeItem(SESSION_KEY)}}
-    hideLoader();
-  });
-</script>
-</body>
-</html>
-=sessionStorage.getItem(SESSION_KEY);
-    if(saved){try{currentUser=JSON.parse(saved);enterApp(currentUser);return}catch(_){sessionStorage.removeItem(SESSION_KEY)}}
+    if(saved){
+      try{
+        const cached=JSON.parse(saved);
+        // Zweryfikuj czy token z cache nadal ma wymagane scope'y
+        if(cached.access_token){
+          (async()=>{
+            try{
+              const ti=await fetch('https://www.googleapis.com/oauth2/v3/tokeninfo?access_token='+cached.access_token);
+              const td=await ti.json();
+              if(td.error){
+                // Token wygasł - wyloguj
+                sessionStorage.removeItem(SESSION_KEY);
+                hideLoader();
+                return;
+              }
+              const granted=(td.scope||'').split(' ');
+              const hasSheets=granted.some(s=>s.includes('spreadsheets'));
+              const hasDrive=granted.some(s=>s.includes('drive'));
+              if(!hasSheets||!hasDrive){
+                sessionStorage.removeItem(SESSION_KEY);
+                currentUser=null;
+                hideLoader();
+                showScopesError();
+                return;
+              }
+              currentUser=cached;
+              enterApp(currentUser);
+            }catch(_){
+              sessionStorage.removeItem(SESSION_KEY);
+              hideLoader();
+            }
+          })();
+          return;
+        }
+      }catch(_){sessionStorage.removeItem(SESSION_KEY)}
+    }
     hideLoader();
   });
 </script>
