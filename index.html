@@ -2727,9 +2727,9 @@
             <span style="margin-top:3px;flex-shrink:0">${favImg}</span>
             <div style="min-width:0">
               ${item.name ? `<div class="td-name">${escHtml(item.name)}</div>` : ''}
-              <a href="${escHtml(item.url)}" target="_blank" rel="noopener" title="${escHtml(item.url)}">${escHtml(truncate(item.url, 44))}</a>
-              ${item.notes ? `<div style="font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px" title="${escAttr(item.notes)}">📝 ${escHtml(item.notes)}</div>` : ''}
-              ${item.linkDo && item.type !== 'Ogłoszenia' ? `<div style="font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px"><a href="${escHtml(item.linkDo)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none" title="${escAttr(item.linkDo)}">🔗 Przykładowy wpis</a></div>` : ''}
+              <a href="${/^https?:\/\//i.test(item.url) ? escHtml(item.url) : 'https://' + escHtml(item.url)}" target="_blank" rel="noopener" title="${escHtml(item.url)}">${escHtml(truncate(item.url, 44))}</a>
+              ${item.notes ? `<div style="font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.5;white-space:normal;word-break:break-word;max-width:380px">📝 ${escHtml(item.notes)}</div>` : ''}
+              ${item.linkDo && item.type !== 'Ogłoszenia' && item.type !== 'Social Media' ? `<div style="font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px"><a href="${escHtml(item.linkDo)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none" title="${escAttr(item.linkDo)}">🔗 Przykładowy wpis</a></div>` : ''}
             </div>
           </div>
         </td>
@@ -2834,7 +2834,9 @@
   function statusBadge(code, label) {
     if (!code && !label) return `<span class="status-badge status-none">Nie sprawdzono</span>`;
     const c = parseInt(code) || 0;
+    // 403 = zabezpieczenie przed crawlerami — wyświetlaj jako 200
     if (c >= 200 && c < 300) return `<span class="status-badge status-ok">✓ OK (${c})</span>`;
+    if (c === 403) return `<span class="status-badge status-ok">✓ OK (200)</span>`;
     if (c >= 300 && c < 400) return `<span class="status-badge status-redir">↪ ${c}</span>`;
     if (c >= 400)            return `<span class="status-badge status-err">✗ ${c}</span>`;
     if (label && label.toLowerCase().includes('niedostępna')) return `<span class="status-badge status-err">✗ Niedostępna</span>`;
@@ -4104,7 +4106,7 @@
       </div>`;
 
       // Link do dodanego linku — obowiązkowe w trybie "Sprawdzona", ukryte dla Ogłoszeń
-      if (formType !== 'Ogłoszenia') {
+      if (formType !== 'Ogłoszenia' && formType !== 'Social Media') {
         html += `<div class="field-row">
           <div class="field-label">Link do dodanego linku <span>*</span></div>
           <input class="field-input" id="ff-link" type="url" placeholder="https://example.com/artykul-z-linkiem">
@@ -4141,7 +4143,7 @@
     if (!url) { alert('Podaj URL miejscówki.'); return; }
     if (!formType) { alert('Wybierz typ miejscówki.'); return; }
     if (formType === 'Profile' && !kategoria) { alert('Wybierz kategorię tematyczną.'); return; }
-    if (isChecked && !linkDo && formType !== 'Ogłoszenia') { alert('Podaj link do dodanego linku — to pole jest wymagane przy miejscówce sprawdzonej.'); return; }
+    if (isChecked && !linkDo && formType !== 'Ogłoszenia' && formType !== 'Social Media') { alert('Podaj link do dodanego linku — to pole jest wymagane przy miejscówce sprawdzonej.'); return; }
 
     // Check for duplicate URL — in baza and in pending verifications
     const normalizedUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
@@ -4812,7 +4814,7 @@
     document.body.appendChild(modal);
     // Ukryj pole linkDo dla Ogłoszeń
     const qeLinkRow = document.getElementById('qe-link-row');
-    if (qeLinkRow) qeLinkRow.style.display = item[3] === 'Ogłoszenia' ? 'none' : '';
+    if (qeLinkRow) qeLinkRow.style.display = (item[3] === 'Ogłoszenia' || item[3] === 'Social Media') ? 'none' : '';
   }
 
   async function submitQuickEdit(id) {
