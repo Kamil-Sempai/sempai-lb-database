@@ -4703,12 +4703,12 @@
 
   async function triggerDomainCheck() {
     if (checkInProgress) return;
-    if (!confirm('Uruchomić sprawdzanie wszystkich domen? Może to potrwać kilka minut.')) return;
+    if (!confirm('Uruchomić sprawdzanie wszystkich domen?\n\nBaza ma wiele miejsc — sprawdzanie odbywa się partiami po 25 domen. Pierwsze wyniki pojawią się za ok. 1-2 minuty.')) return;
 
     checkInProgress = true;
     const btn = document.getElementById('mon-check-btn');
     btn.disabled = true;
-    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Sprawdzanie…`;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Uruchamianie…`;
 
     const data = await callAPI('checkDomains', {}, 'POST');
     checkInProgress = false;
@@ -4716,9 +4716,9 @@
     btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Sprawdź teraz`;
 
     if (!data || data.error) { alert('Błąd: ' + (data?.error||'Sprawdzanie nie powiodło się.')); return; }
-    await refreshDataInBackground();
-    renderMonitoring();
-    alert(`✅ Sprawdzono ${data.checked||0} domen.`);
+    showToast('✅ Sprawdzanie uruchomione — baza będzie aktualizowana stopniowo co kilkadziesiąt sekund', 'success', 8000);
+    // Odśwież dane po 90s żeby zobaczyć pierwsze wyniki
+    setTimeout(async () => { await refreshDataInBackground(); renderMonitoring(); }, 90000);
   }
 
   async function loadScheduleStatus() {
