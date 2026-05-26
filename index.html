@@ -2728,7 +2728,19 @@
             <div style="min-width:0">
               ${item.name ? `<div class="td-name">${escHtml(item.name)}</div>` : ''}
               <a href="${/^https?:\/\//i.test(item.url) ? escHtml(item.url) : 'https://' + escHtml(item.url)}" target="_blank" rel="noopener" title="${escHtml(item.url)}">${escHtml(truncate(item.url, 44))}</a>
-              ${item.notes ? `<div style="font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.5;white-space:normal;word-break:break-word;max-width:380px">📝 ${escHtml(item.notes)}</div>` : ''}
+              ${item.notes ? (() => {
+                const NOTE_LIMIT = 80;
+                const n = item.notes;
+                const nid = 'note-' + String(item.id);
+                if (n.length <= NOTE_LIMIT) {
+                  return `<div style="font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.5;white-space:normal;word-break:break-word;max-width:380px">📝 ${escHtml(n)}</div>`;
+                }
+                return '<div style="font-size:11px;color:var(--text-3);margin-top:3px;max-width:380px">📝 '
+                  + '<span id="' + nid + '-s" style="white-space:normal;word-break:break-word;line-height:1.5">' + escHtml(n.slice(0, NOTE_LIMIT)) + '… </span>'
+                  + '<span id="' + nid + '-f" style="display:none;white-space:normal;word-break:break-word;line-height:1.5">' + escHtml(n) + ' </span>'
+                  + '<a onclick="toggleNote(\'' + nid + '\',event)" id="' + nid + '-b" style="cursor:pointer;color:var(--accent);font-size:10px;font-weight:600">więcej</a>'
+                  + '</div>';
+              })() : ''}
               ${item.linkDo && item.type !== 'Ogłoszenia' && item.type !== 'Social Media' ? `<div style="font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px"><a href="${escHtml(item.linkDo)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none" title="${escAttr(item.linkDo)}">🔗 Przykładowy wpis</a></div>` : ''}
             </div>
           </div>
@@ -5024,6 +5036,19 @@
     markGuideSeen(); // zapamiętaj że użytkownik już widział poradnik
   }
 
+
+
+  function toggleNote(id, event) {
+    event?.stopPropagation();
+    const short = document.getElementById(id + '-short');
+    const full  = document.getElementById(id + '-full');
+    const btn   = document.getElementById(id + '-btn');
+    if (!short || !full || !btn) return;
+    const expanded = full.style.display !== 'none';
+    short.style.display = expanded ? 'inline' : 'none';
+    full.style.display  = expanded ? 'none'   : 'inline';
+    btn.textContent     = expanded ? 'więcej'  : 'mniej';
+  }
 
   /* ── SM EXPORT PICKER ──────────────────────────── */
   let smAccountsCache = {}; // placeId -> [{id,login,haslo,notatki}]
