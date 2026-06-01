@@ -4833,20 +4833,24 @@
   async function submitQuickEdit(id) {
     if (submitQuickEdit._busy) return;
     submitQuickEdit._busy = true;
-    const name   = document.getElementById('qe-name')?.value.trim();
-    const url    = document.getElementById('qe-url')?.value.trim();
-    const dof    = document.getElementById('qe-dof')?.value;
-    const notes  = document.getElementById('qe-notes')?.value.trim();
-    const linkDo = document.getElementById('qe-link')?.value.trim() || '';
+    try {
+      const name   = document.getElementById('qe-name')?.value.trim();
+      const url    = document.getElementById('qe-url')?.value.trim();
+      const dof    = document.getElementById('qe-dof')?.value;
+      const notes  = document.getElementById('qe-notes')?.value.trim();
+      const linkDo = document.getElementById('qe-link')?.value.trim() || '';
 
-    if (!url) { alert('URL jest wymagany.'); return; }
+      if (!url) { alert('URL jest wymagany.'); return; }
 
-    const data = await callAPI('editPlace', { id, name, url, dofollow: dof, notes, linkDo }, 'POST');
-    if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
-    document.getElementById('qedit-modal').remove();
-    showToast('✅ Zmiany zapisane', 'success');
-    await refreshDataInBackground();
-    renderFilteredPlaces();
+      const data = await callAPI('editPlace', { id, name, url, dofollow: dof, notes, linkDo }, 'POST');
+      if (!data || data.error) { alert('Błąd: ' + (data?.error||'Nieznany błąd')); return; }
+      document.getElementById('qedit-modal')?.remove();
+      showToast('✅ Zmiany zapisane', 'success');
+      await refreshDataInBackground();
+      renderFilteredPlaces();
+    } finally {
+      submitQuickEdit._busy = false;
+    }
   }
 
   async function forceSync() {
